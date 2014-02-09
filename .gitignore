@@ -1,0 +1,13 @@
+
+# Temp
+
+*.*~
+
+# Vim
+*.swp
+*.swo
+
+# Compliled
+
+*.o
+
