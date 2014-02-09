@@ -1,6 +1,5 @@
 
 # Temp
-
 *.*~
 
 # Vim
@@ -8,6 +7,15 @@
 *.swo
 
 # Compliled
-
 *.o
 
+# MAC OSX / Xcode
+.DS_Store
+.Trashes
+*.lock
+*~.nib
+DerivedData/
+build/
+*.xcuserstate
+project.xcworkspace/*
+xcuserdata/*
