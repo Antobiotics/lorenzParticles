@@ -11,6 +11,8 @@
 *.a
 
 # General
+*Debug
+*Release
 [Bb]uild/*
 [Dd]ebug*/
 [Rr]elease*/
