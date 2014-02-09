@@ -3,32 +3,74 @@
 #define USE_OPENGL_CONTEXT
 #define NUM_PARTICLES (1000 * 1)
 
+using namespace std;
+
 //------------------------------------------------------------------------------
 //																		  GLOBAL
 //																	   VARIABLES
 //------------------------------------------------------------------------------
-ofColor white;
+msa::OpenCL opencl;
+
 Particle particles[NUM_PARTICLES];
+msa::OpenCLBuffer clMemParticles; // Stores particles.
 float2 particlesPos[NUM_PARTICLES];
+msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
+msa::OpenCLKernel *clLorenzKernel;
+
+GLuint vbo[1];
+
+ofColor backgroundColor;
+float timeStep;
+float dt;
+float2 mousePos;
+float2 dimensions;
 
 //------------------------------------------------------------------------------
 //																		 PRIVATE
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
+void clParticles::setupOpenCL() {
+	opencl.setupFromOpenGL();
+	
+	// Bind buffer to the particle position.
+	glGenBuffersARB(1, vbo); // Create a new buffer object.
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]); // Bind the buffer object.
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+					sizeof(float2) * NUM_PARTICLES,
+					particlesPos,
+					GL_DYNAMIC_COPY_ARB); // Copy data to the buffer object.
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	
+	// Load Program:
+	opencl.loadProgramFromFile("kernels/lorenz.cl");
+	
+	// Load the kernel:
+	clLorenzKernel = opencl.loadKernel("updateParticle");
+	
+	clMemParticles.initBuffer(sizeof(Particle) * NUM_PARTICLES, CL_MEM_READ_WRITE, particles);
+	clMemPosVBO.initFromGLObject(vbo[0]);
+
+	// Bind variables to the kernel
+	clLorenzKernel->setArg(0, clMemParticles.getCLMem());
+	clLorenzKernel->setArg(1, clMemPosVBO.getCLMem());
+	clLorenzKernel->setArg(2, mousePos);
+	clLorenzKernel->setArg(3, dimensions);
+}
+//------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
-	float x = ofGetWidth() / 2;
-	float y = ofGetHeight() / 2;
+	float x = ofRandomWidth();
+	float y = ofRandomHeight();
 	particlesPos[i].set(x, y);
 }
 
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < NUM_PARTICLES; i++) {
-		Particle p = particles[i];
-		p.vel.set(0, 0);
-		p.mass = ofRandom(0.5, 1);
-		p.theta = ofRandom(0, TWO_PI);
-		p.u = ofRandom(-1, 1);
+		Particle *p = &particles[i];
+		p->vel.set(0, 0);
+		p->mass = ofRandom(0.5, 1);
+		p->theta = ofRandom(0, TWO_PI);
+		p->u = ofRandom(-1, 1);
 		setupPosition(i);
 	}
 }
@@ -39,70 +81,110 @@ void clParticles::setupParticles() {
 //------------------------------------------------------------------------------
 void clParticles::setup() {
 	// Initialise the window:
-	white = *new ofColor(255, 255, 255);
-	ofBackground(white);
+	backgroundColor = *new ofColor(123, 12, 55);
+	timeStep = 0;
+	ofSetWindowShape(440, 640);
+	ofBackground(backgroundColor);
 	ofSetLogLevel(OF_LOG_VERBOSE);
+	ofSetVerticalSync(false);
+	ofSetBackgroundAuto(true);
+	
+	// Initialise OpenCL:
+	setupOpenCL();
 	
 	// Initialise Particle System:
 	setupParticles();
+	
+	glPointSize(2);
 }
 //------------------------------------------------------------------------------
 
-void clParticles::update(){
-
+void clParticles::update() {
+    mousePos.x   = ofGetMouseX();
+	mousePos.y   = ofGetMouseY();
+	dimensions.x = ofGetWidth ();
+	dimensions.y = ofGetHeight();
+	clLorenzKernel->setArg(2, mousePos);
+	clLorenzKernel->setArg(3, dimensions);
+    
+    // Update the OpenCL kernel:
+    clEnqueueAcquireGLObjects(opencl.getQueue(),
+                              1, &clMemPosVBO.getCLMem(), 0,0,0);
+	clLorenzKernel->run1D(NUM_PARTICLES);
+	clEnqueueReleaseGLObjects(opencl.getQueue(),
+                              1, &clMemPosVBO.getCLMem(), 0,0,0);
+    
+    // Update Global Variables:
+    timeStep += dt;
 }
 
 //------------------------------------------------------------------------------
 
-void clParticles::draw(){
-
+void clParticles::draw() {
+	
+	glColor3f(1.0f, 1.0f, 1.0f);
+	
+	//
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+	opencl.flush(); // block previously queued OpenCL commands.
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	//
+	
+	std::cout << "PosX50: "<< particlesPos[50].x << std::endl;
+	
+	glColor3f(1.0f, 1.0f, 1.0f);
+	string info = "fps: " + ofToString(ofGetFrameRate()) + "\nnumber of particles: " + ofToString(NUM_PARTICLES);
+	ofDrawBitmapString(info, 20, 20);
 }
 
 //------------------------------------------------------------------------------
 //																	   CALLBACKS
 //------------------------------------------------------------------------------
-void clParticles::keyPressed(int key){
+void clParticles::keyPressed(int key) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::keyReleased(int key){
+void clParticles::keyReleased(int key) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::mouseMoved(int x, int y ){
+void clParticles::mouseMoved(int x, int y ) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::mouseDragged(int x, int y, int button){
+void clParticles::mouseDragged(int x, int y, int button) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::mousePressed(int x, int y, int button){
+void clParticles::mousePressed(int x, int y, int button) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::mouseReleased(int x, int y, int button){
+void clParticles::mouseReleased(int x, int y, int button) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::windowResized(int w, int h){
+void clParticles::windowResized(int w, int h) {
 
 }
 
 //------------------------------------------------------------------------------
-void clParticles::gotMessage(ofMessage msg){
+void clParticles::gotMessage(ofMessage msg) {
 
 }
 
 //------------------------------------------------------------------------------
 
-void clParticles::dragEvent(ofDragInfo dragInfo){ 
+void clParticles::dragEvent(ofDragInfo dragInfo) {
 
 }
 //------------------------------------------------------------------------------
