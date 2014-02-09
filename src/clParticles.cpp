@@ -1,7 +1,7 @@
 #include "clParticles.h"
 
 #define USE_OPENGL_CONTEXT
-#define NUM_PARTICLES (1000 * 1)
+#define NUM_PARTICLES (1000 * 100)
 
 using namespace std;
 
@@ -24,10 +24,22 @@ float timeStep;
 float dt;
 float2 mousePos;
 float2 dimensions;
+float2 initPos;
+int pointSize;
+
+float tx, ty; // Translation values.
 
 //------------------------------------------------------------------------------
 //																		 PRIVATE
 //																	   FUNCTIONS
+//------------------------------------------------------------------------------
+float2 clParticles::translateVector(float2 vec) {
+	float2 translated;
+	translated.x = vec.x - tx;
+	translated.y = vec.y - ty;
+	return translated;
+}
+
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
 	opencl.setupFromOpenGL();
@@ -38,7 +50,7 @@ void clParticles::setupOpenCL() {
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
 					sizeof(float2) * NUM_PARTICLES,
 					particlesPos,
-					GL_DYNAMIC_COPY_ARB); // Copy data to the buffer object.
+					GL_STREAM_COPY_ARB); // Copy data to the buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	
 	// Load Program:
@@ -58,16 +70,16 @@ void clParticles::setupOpenCL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
-	float x = ofRandomWidth();
-	float y = ofRandomHeight();
-	particlesPos[i].set(x, y);
+	initPos.x = ofGetWidth() / 2;
+	initPos.y = ofGetHeight() / 2;
+	particlesPos[i].set(initPos);
 }
 
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < NUM_PARTICLES; i++) {
 		Particle *p = &particles[i];
-		p->vel.set(ofRandom(0, 1), ofRandom(0, 1));
+		p->vel.set(ofRandom(-1, 1), ofRandom(-1, 1));
 		p->mass = ofRandom(0.5, 1);
 		p->theta = ofRandom(0, TWO_PI);
 		p->u = ofRandom(-1, 1);
@@ -82,8 +94,10 @@ void clParticles::setupParticles() {
 void clParticles::setup() {
 	// Initialise the window:
 	backgroundColor = *new ofColor(123, 12, 55);
+	pointSize = 5;
+	tx = ofGetWidth() / 2;
+	ty = ofGetHeight() / 2;
 	timeStep = 0;
-	ofSetWindowShape(440, 640);
 	ofBackground(backgroundColor);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetVerticalSync(false);
@@ -95,7 +109,7 @@ void clParticles::setup() {
 	// Initialise Particle System:
 	setupParticles();
 	
-	glPointSize(2);
+	glPointSize(pointSize);
 }
 //------------------------------------------------------------------------------
 
@@ -128,16 +142,16 @@ void clParticles::draw() {
 	glColor3f(1.0f, 1.0f, 1.0f);
 	
 	//
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-	opencl.flush(); // block previously queued OpenCL commands.
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, 0);
-	glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	glPushMatrix();
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+		opencl.finish(); // block previously queued OpenCL commands.
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, 0);
+		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	glPopMatrix();
 	//
-	
-	std::cout << "PosX50: "<< particlesPos[0].x << std::endl;
-	
+		
 	glColor3f(1.0f, 1.0f, 1.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) + "\nnumber of particles: " + ofToString(NUM_PARTICLES);
 	ofDrawBitmapString(info, 20, 20);

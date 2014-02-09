@@ -38,6 +38,8 @@ private:
 	void setupOpenCL();
 	void setupParticles();
 	void setupPosition(int i);
+	
+	float2 translateVector(float2 vec);
 };
 
 //------------------------------------------------------------------------------
