@@ -8,14 +8,34 @@
 
 # Compliled
 *.o
+*.a
 
-# MAC OSX / Xcode
+# General
+[Bb]uild/*
+[Dd]ebug*/
+[Rr]elease*/
+*.app/**
+*.log
+
+# Openframework
+*/*/bin/*
+!*/*/bin/data/
+
+# MAC OSX
+._*
 .DS_Store
 .Trashes
 *.lock
-*~.nib
-DerivedData/
-build/
+DerivedData/*
+
+# Xcode
+/*/*/*.xcodeproj
+/*/*/Project.xcconfig
+/*/*/openFrameworks-Info.plist
+*.pbxuser
 *.xcuserstate
 project.xcworkspace/*
-xcuserdata/*
+xcuserdata
+*.xcworkspace
+*~.nib
+
