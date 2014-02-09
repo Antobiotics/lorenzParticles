@@ -67,7 +67,7 @@ void clParticles::setupPosition(int i) {
 void clParticles::setupParticles() {
 	for(int i = 0; i < NUM_PARTICLES; i++) {
 		Particle *p = &particles[i];
-		p->vel.set(0, 0);
+		p->vel.set(ofRandom(0, 1), ofRandom(0, 1));
 		p->mass = ofRandom(0.5, 1);
 		p->theta = ofRandom(0, TWO_PI);
 		p->u = ofRandom(-1, 1);
@@ -100,10 +100,13 @@ void clParticles::setup() {
 //------------------------------------------------------------------------------
 
 void clParticles::update() {
+	// Update Arguments:
     mousePos.x   = ofGetMouseX();
 	mousePos.y   = ofGetMouseY();
 	dimensions.x = ofGetWidth ();
 	dimensions.y = ofGetHeight();
+	
+	// Set Kernel Arguments:
 	clLorenzKernel->setArg(2, mousePos);
 	clLorenzKernel->setArg(3, dimensions);
     
@@ -133,7 +136,7 @@ void clParticles::draw() {
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	//
 	
-	std::cout << "PosX50: "<< particlesPos[50].x << std::endl;
+	std::cout << "PosX50: "<< particlesPos[0].x << std::endl;
 	
 	glColor3f(1.0f, 1.0f, 1.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) + "\nnumber of particles: " + ofToString(NUM_PARTICLES);

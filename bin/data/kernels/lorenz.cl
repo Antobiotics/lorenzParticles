@@ -16,7 +16,7 @@ typedef struct{
 __kernel void updateParticle(__global Particle* particles, __global float2* posBuffer, const float2 mousePos, const float2 dimensions) {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
-	posBuffer[id] += 0.2f;
+	posBuffer[id] += p->vel;
 //	float2 diff = mousePos - posBuffer[id];
 //	float invDistSQ = 1.0f / dot(diff, diff);
 //	diff *= MOUSE_FORCE * invDistSQ;
