@@ -94,7 +94,7 @@ void clParticles::setupParticles() {
 void clParticles::setup() {
 	// Initialise the window:
 	backgroundColor = *new ofColor(123, 12, 55);
-	pointSize = 5;
+	pointSize = 1;
 	tx = ofGetWidth() / 2;
 	ty = ofGetHeight() / 2;
 	timeStep = 0;
