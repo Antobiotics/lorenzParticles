@@ -1,4 +1,6 @@
+//----------------------
 #include "clParticles.h"
+//----------------------
 
 #define USE_OPENGL_CONTEXT
 #define NUM_PARTICLES (1000 * 100)
