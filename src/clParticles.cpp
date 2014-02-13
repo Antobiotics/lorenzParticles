@@ -39,6 +39,8 @@ float dTime;
 
 int pointSize;
 
+ofImage particuleTex;
+
 //------------------------------------------------------------------------------
 //																		   SETUP
 //																	   FUNCTIONS
@@ -55,7 +57,7 @@ void clParticles::setupWindow() {
 //------------------------------------------------------------------------------
 void clParticles::setupParameters() {
 	backgroundColor = *new ofColor(123, 12, 55);
-	pointSize = 1;
+	pointSize = 3;
 	currentTime = 0;
 	dTime = 0.01;
 }
@@ -118,16 +120,24 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glPointSize(pointSize);
-	
 	//
 	glPushMatrix();
+		glColor3f(1.0f, 1.0f, 1.0f);
+
+		glEnable(GL_POINT_SPRITE);
+		glEnable(GL_POINT_SMOOTH);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE);
+		glPointSize(pointSize);
+
+	opencl.finish(); // block previously queued OpenCL commands.
+	glEnableClientState(GL_VERTEX_ARRAY);
+	
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-		opencl.finish(); // block previously queued OpenCL commands.
-		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(2, GL_FLOAT, 0, NULL);
+	particuleTex.getTextureReference().bind();
 		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+	particuleTex.getTextureReference().unbind();
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	glPopMatrix();
 	//
@@ -157,6 +167,9 @@ void clParticles::setup() {
 	
 	// Initialise Particle System:
 	setupParticles();
+	
+	ofDisableArbTex();
+	particuleTex.loadImage("glitter.png");
 }
 //------------------------------------------------------------------------------
 
