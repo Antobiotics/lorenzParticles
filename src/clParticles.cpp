@@ -23,17 +23,17 @@ msa::OpenCL opencl;
 
 Particle particles[NUM_PARTICLES];
 msa::OpenCLBuffer clMemParticles; // Stores particles.
-float2 particlesPos[NUM_PARTICLES];
+float4 particlesPos[NUM_PARTICLES];
 msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
 msa::OpenCLKernel *clLorenzKernel;
 
 GLuint vbo[1];
 
 ofColor backgroundColor;
+float4 initPos;
+float4 parameters;
 float2 mousePos;
 float2 dimensions;
-float2 initPos;
-float4 parameters;
 float timeStep;
 float dTime;
 
@@ -77,7 +77,7 @@ void clParticles::setupOpenCL() {
 	glGenBuffersARB(1, vbo); // Create a new buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]); // Bind the buffer object.
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-					sizeof(float2) * NUM_PARTICLES,
+					sizeof(float4) * NUM_PARTICLES,
 					particlesPos,
 					GL_STREAM_COPY_ARB); // Copy data to the buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -104,7 +104,9 @@ void clParticles::setupOpenCL() {
 void clParticles::setupPosition(int i) {
 	initPos.x = ofGetWidth() / 2;
 	initPos.y = ofGetHeight() / 2;
-	particlesPos[i].set(initPos);
+	initPos.z = 0;
+	initPos.w = 0;
+	particlesPos[i] = initPos;
 }
 
 //------------------------------------------------------------------------------
