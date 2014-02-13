@@ -7,13 +7,13 @@
 
 using namespace std;
 
-#define kArg_particles  0
-#define kArg_posBuffer  1
-#define kArg_mousePos   2
-#define kArg_dimensions 3
-#define kArg_parameters 4
-#define kArg_timeStep   5
-#define kArg_dTime		6
+#define kArg_particles   0
+#define kArg_posBuffer   1
+#define kArg_mousePos    2
+#define kArg_dimensions  3
+#define kArg_parameters  4
+#define kArg_currentTime 5
+#define kArg_dTime		 6
 
 //------------------------------------------------------------------------------
 //																		  GLOBAL
@@ -23,34 +23,26 @@ msa::OpenCL opencl;
 
 Particle particles[NUM_PARTICLES];
 msa::OpenCLBuffer clMemParticles; // Stores particles.
-float4 particlesPos[NUM_PARTICLES];
+float2 particlesPos[NUM_PARTICLES];
 msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
 msa::OpenCLKernel *clLorenzKernel;
 
 GLuint vbo[1];
 
 ofColor backgroundColor;
-float4 initPos;
+float2 initPos;
 float4 parameters;
 float2 mousePos;
 float2 dimensions;
-float timeStep;
+float currentTime;
 float dTime;
 
 int pointSize;
 
-float tx, ty; // Translation values.
-
 //------------------------------------------------------------------------------
-//																		 PRIVATE
+//																		   SETUP
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
-float2 clParticles::translateVector(float2 vec) {
-	float2 translated;
-	translated.x = vec.x - tx;
-	translated.y = vec.y - ty;
-	return translated;
-}
 
 //------------------------------------------------------------------------------
 void clParticles::setupWindow() {
@@ -64,9 +56,7 @@ void clParticles::setupWindow() {
 void clParticles::setupParameters() {
 	backgroundColor = *new ofColor(123, 12, 55);
 	pointSize = 1;
-	tx = ofGetWidth() / 2;
-	ty = ofGetHeight() / 2;
-	timeStep = 0;
+	currentTime = 0;
 	dTime = 0.01;
 }
 //------------------------------------------------------------------------------
@@ -77,10 +67,10 @@ void clParticles::setupOpenCL() {
 	glGenBuffersARB(1, vbo); // Create a new buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]); // Bind the buffer object.
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-					sizeof(float4) * NUM_PARTICLES,
+					sizeof(float2) * NUM_PARTICLES,
 					particlesPos,
 					GL_STREAM_COPY_ARB); // Copy data to the buffer object.
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	
 	// Load Program:
 	opencl.loadProgramFromFile("kernels/lorenz.cl");
@@ -97,15 +87,13 @@ void clParticles::setupOpenCL() {
 	clLorenzKernel->setArg(kArg_mousePos, mousePos);
 	clLorenzKernel->setArg(kArg_dimensions, dimensions);
 	clLorenzKernel->setArg(kArg_parameters, parameters);
-	clLorenzKernel->setArg(kArg_timeStep, timeStep);
+	clLorenzKernel->setArg(kArg_currentTime, currentTime);
 	clLorenzKernel->setArg(kArg_dTime, dTime);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
 	initPos.x = ofGetWidth() / 2;
 	initPos.y = ofGetHeight() / 2;
-	initPos.z = 0;
-	initPos.w = 0;
 	particlesPos[i] = initPos;
 }
 
@@ -119,6 +107,38 @@ void clParticles::setupParticles() {
 		p->u = ofRandom(-1, 1);
 		setupPosition(i);
 	}
+}
+//------------------------------------------------------------------------------
+//																		  UPDATE
+//																	   FUNCTIONS
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+//  																		DRAW
+//																	   FUNCTIONS
+//------------------------------------------------------------------------------
+void clParticles::drawParticles() {
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glPointSize(pointSize);
+	
+	//
+	glPushMatrix();
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+		opencl.finish(); // block previously queued OpenCL commands.
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, NULL);
+		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+	glPopMatrix();
+	//
+}
+
+//------------------------------------------------------------------------------
+void clParticles::drawInfos() {
+	glColor3f(1.0f, 1.0f, 1.0f);
+	string info = "fps: " + ofToString(ofGetFrameRate()) +
+				  "\nnumber of particles: " + ofToString(NUM_PARTICLES);
+	ofDrawBitmapString(info, 20, 20);
 }
 
 //------------------------------------------------------------------------------
@@ -137,8 +157,6 @@ void clParticles::setup() {
 	
 	// Initialise Particle System:
 	setupParticles();
-	
-	glPointSize(pointSize);
 }
 //------------------------------------------------------------------------------
 
@@ -153,39 +171,24 @@ void clParticles::update() {
 	clLorenzKernel->setArg(kArg_mousePos, mousePos);
 	clLorenzKernel->setArg(kArg_dimensions, dimensions);
 	clLorenzKernel->setArg(kArg_dTime, dTime);
-	clLorenzKernel->setArg(kArg_timeStep, timeStep);
+	clLorenzKernel->setArg(kArg_currentTime, currentTime);
 	
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0,0,0);
+                              1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
 	clLorenzKernel->run1D(NUM_PARTICLES);
 	clEnqueueReleaseGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0,0,0);
+                              1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
     
     // Update Global Variables:
-    timeStep += dTime;
+    currentTime += dTime;
 }
 
 //------------------------------------------------------------------------------
 
 void clParticles::draw() {
-	
-	glColor3f(1.0f, 1.0f, 1.0f);
-	
-	//
-	glPushMatrix();
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-		opencl.finish(); // block previously queued OpenCL commands.
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(2, GL_FLOAT, 0, 0);
-		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	glPopMatrix();
-	//
-		
-	glColor3f(1.0f, 1.0f, 1.0f);
-	string info = "fps: " + ofToString(ofGetFrameRate()) + "\nnumber of particles: " + ofToString(NUM_PARTICLES);
-	ofDrawBitmapString(info, 20, 20);
+	drawParticles();
+	drawInfos();
 }
 
 //------------------------------------------------------------------------------
