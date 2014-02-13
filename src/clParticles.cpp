@@ -135,9 +135,9 @@ void clParticles::drawParticles() {
 	
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
 		glVertexPointer(2, GL_FLOAT, 0, NULL);
-	particuleTex.getTextureReference().bind();
+//	particuleTex.getTextureReference().bind();
 		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
-	particuleTex.getTextureReference().unbind();
+//	particuleTex.getTextureReference().unbind();
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	glPopMatrix();
 	//
