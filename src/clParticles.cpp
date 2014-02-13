@@ -9,6 +9,9 @@ using namespace std;
 #define kArg_posBuffer  1
 #define kArg_mousePos   2
 #define kArg_dimensions 3
+#define kArg_parameters 4
+#define kArg_timeStep   5
+#define kArg_dTime		6
 
 //------------------------------------------------------------------------------
 //																		  GLOBAL
@@ -25,11 +28,13 @@ msa::OpenCLKernel *clLorenzKernel;
 GLuint vbo[1];
 
 ofColor backgroundColor;
-float timeStep;
-float dt;
 float2 mousePos;
 float2 dimensions;
 float2 initPos;
+float4 parameters;
+float timeStep;
+float dTime;
+
 int pointSize;
 
 float tx, ty; // Translation values.
@@ -45,6 +50,23 @@ float2 clParticles::translateVector(float2 vec) {
 	return translated;
 }
 
+//------------------------------------------------------------------------------
+void clParticles::setupWindow() {
+	ofBackground(backgroundColor);
+	ofSetLogLevel(OF_LOG_VERBOSE);
+	ofSetVerticalSync(false);
+	ofSetBackgroundAuto(true);
+}
+
+//------------------------------------------------------------------------------
+void clParticles::setupParameters() {
+	backgroundColor = *new ofColor(123, 12, 55);
+	pointSize = 1;
+	tx = ofGetWidth() / 2;
+	ty = ofGetHeight() / 2;
+	timeStep = 0;
+	dTime = 0.01;
+}
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
 	opencl.setupFromOpenGL();
@@ -72,6 +94,9 @@ void clParticles::setupOpenCL() {
 	clLorenzKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
 	clLorenzKernel->setArg(kArg_mousePos, mousePos);
 	clLorenzKernel->setArg(kArg_dimensions, dimensions);
+	clLorenzKernel->setArg(kArg_parameters, parameters);
+	clLorenzKernel->setArg(kArg_timeStep, timeStep);
+	clLorenzKernel->setArg(kArg_dTime, dTime);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -97,17 +122,12 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::setup() {
-	// Initialise the window:
-	backgroundColor = *new ofColor(123, 12, 55);
-	pointSize = 1;
-	tx = ofGetWidth() / 2;
-	ty = ofGetHeight() / 2;
-	timeStep = 0;
-	ofBackground(backgroundColor);
-	ofSetLogLevel(OF_LOG_VERBOSE);
-	ofSetVerticalSync(false);
-	ofSetBackgroundAuto(true);
+	// Initialise Parameters and global variables:
+	setupParameters();
 	
+	// Initialise the window:
+	setupWindow();
+
 	// Initialise OpenCL:
 	setupOpenCL();
 	
@@ -128,7 +148,9 @@ void clParticles::update() {
 	// Set Kernel Arguments:
 	clLorenzKernel->setArg(kArg_mousePos, mousePos);
 	clLorenzKernel->setArg(kArg_dimensions, dimensions);
-    
+	clLorenzKernel->setArg(kArg_dTime, dTime);
+	clLorenzKernel->setArg(kArg_timeStep, timeStep);
+	
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
                               1, &clMemPosVBO.getCLMem(), 0,0,0);
@@ -137,7 +159,7 @@ void clParticles::update() {
                               1, &clMemPosVBO.getCLMem(), 0,0,0);
     
     // Update Global Variables:
-    timeStep += dt;
+    timeStep += dTime;
 }
 
 //------------------------------------------------------------------------------

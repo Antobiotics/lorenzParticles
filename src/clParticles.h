@@ -35,6 +35,8 @@ public:
 	void gotMessage(ofMessage msg);
 	
 private:
+	void setupParameters();
+	void setupWindow();
 	void setupOpenCL();
 	void setupParticles();
 	void setupPosition(int i);
