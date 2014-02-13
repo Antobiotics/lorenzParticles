@@ -5,6 +5,11 @@
 
 using namespace std;
 
+#define kArg_particles  0
+#define kArg_posBuffer  1
+#define kArg_mousePos   2
+#define kArg_dimensions 3
+
 //------------------------------------------------------------------------------
 //																		  GLOBAL
 //																	   VARIABLES
@@ -63,10 +68,10 @@ void clParticles::setupOpenCL() {
 	clMemPosVBO.initFromGLObject(vbo[0]);
 
 	// Bind variables to the kernel
-	clLorenzKernel->setArg(0, clMemParticles.getCLMem());
-	clLorenzKernel->setArg(1, clMemPosVBO.getCLMem());
-	clLorenzKernel->setArg(2, mousePos);
-	clLorenzKernel->setArg(3, dimensions);
+	clLorenzKernel->setArg(kArg_particles, clMemParticles.getCLMem());
+	clLorenzKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
+	clLorenzKernel->setArg(kArg_mousePos, mousePos);
+	clLorenzKernel->setArg(kArg_dimensions, dimensions);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -121,8 +126,8 @@ void clParticles::update() {
 	dimensions.y = ofGetHeight();
 	
 	// Set Kernel Arguments:
-	clLorenzKernel->setArg(2, mousePos);
-	clLorenzKernel->setArg(3, dimensions);
+	clLorenzKernel->setArg(kArg_mousePos, mousePos);
+	clLorenzKernel->setArg(kArg_dimensions, dimensions);
     
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),

@@ -3,6 +3,10 @@
 #define MOUSE_FORCE		300.0f
 #define MIN_SPEED		0.1f
 
+#define kArg_particles  0
+#define kArg_posBuffer  1
+#define kArg_mousePos   2
+#define kArg_dimensions 3
 
 typedef struct{
 	float2 vel;
