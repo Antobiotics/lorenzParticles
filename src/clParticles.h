@@ -3,18 +3,8 @@
 //-----------------
 #include "ofMain.h"
 #include "MSAOpenCL.h"
+#include "particle.h"
 //-----------------
-
-//------------------------------------------------------------------------------
-typedef struct{
-	float2 vel;
-	float mass;
-	float dummy;
-    float theta;
-    float vTheta;
-    float u;
-    float vU;
-} Particle;
 
 //------------------------------------------------------------------------------
 class clParticles : public ofBaseApp{

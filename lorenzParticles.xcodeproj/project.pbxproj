@@ -283,6 +283,7 @@
 		EA12AA3318A7A48D00C12E7F /* ofxMSATimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMSATimer.h; sourceTree = "<group>"; };
 		EA12AA3C18A7C61D00C12E7F /* lorenz.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; name = lorenz.cl; path = bin/data/kernels/lorenz.cl; sourceTree = "<group>"; };
 		EA12AA3D18A7CC8800C12E7F /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		EAC2618D18ACFD2200B8FF3E /* particle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = particle.h; sourceTree = "<group>"; };
 		EDFEB3D8C9183ADE3FACB4B5 /* ofxUICircleSlider.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUICircleSlider.h; path = ../../../addons/ofxUI/src/ofxUICircleSlider.h; sourceTree = SOURCE_ROOT; };
 		EF872612718328680A4B9D64 /* MSACoreCommon.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = MSACoreCommon.h; path = ../../../addons/ofxMSACore/src/MSACoreCommon.h; sourceTree = SOURCE_ROOT; };
 		F0F5848741DBB0C8CCA7E1C0 /* MSAPhysics3D.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = MSAPhysics3D.h; path = ../../../addons/ofxMSAPhysics/src/MSAPhysics3D.h; sourceTree = SOURCE_ROOT; };
@@ -637,6 +638,7 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* clParticles.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* clParticles.h */,
+				EAC2618D18ACFD2200B8FF3E /* particle.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
