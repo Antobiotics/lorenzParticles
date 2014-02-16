@@ -1,5 +1,10 @@
 <Widget>
     <Kind>4</Kind>
     <Name>Blur Amount</Name>
-    <Value>29.545454025</Value>
+    <Value>32.575756073</Value>
+</Widget>
+<Widget>
+    <Kind>4</Kind>
+    <Name>Fade Speed</Name>
+    <Value>0.393939406</Value>
 </Widget>

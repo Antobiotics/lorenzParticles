@@ -69,6 +69,7 @@ void clParticles::setupGUI() {
 	gui = new ofxUICanvas();
 	gui->init(0, ofGetHeight()/8, ofGetWidth()/6, ofGetHeight());
 	gui->addSlider("Blur Amount", 0, 50, blurAmount);
+	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
 	
 	ofAddListener(gui->newGUIEvent, this, &clParticles::guiEvent);
 	gui->autoSizeToFitWidgets();
@@ -174,6 +175,8 @@ void clParticles::drawOffScreen() {
 		blurShader.end();
 	}
 	fboBlur.end();
+	glColor3f(1.0f, 1.0f, 1.0f);
+	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
 }
 
 //------------------------------------------------------------------------------
@@ -288,9 +291,13 @@ void clParticles::exit() {
 
 //------------------------------------------------------------------------------
 void clParticles::guiEvent(ofxUIEventArgs &e) {
-	if( e.getName() == "Blur Amount") {
+	if(e.getName() == "Blur Amount") {
 		ofxUISlider *slider = e.getSlider();
 		blurAmount = slider->getScaledValue();
+	}
+	if(e.getName() == "Fade Speed") {
+		ofxUISlider *slider = e.getSlider();
+		fadeSpeed = slider->getScaledValue();
 	}
 }
 
@@ -326,7 +333,9 @@ void clParticles::mouseReleased(int x, int y, int button) {
 
 //------------------------------------------------------------------------------
 void clParticles::windowResized(int w, int h) {
-
+	fboPrev.allocate(w, h);
+	fboNew.allocate(w, h);
+	fboBlur.allocate(w, h);
 }
 
 //------------------------------------------------------------------------------
