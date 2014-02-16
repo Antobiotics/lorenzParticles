@@ -2,6 +2,7 @@
 
 //--------------------
 #include "ofMain.h"
+#include "ofxUI.h"
 #include "MSAOpenCL.h"
 #include "particle.h"
 //--------------------
@@ -24,15 +25,22 @@ public:
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 	
+	void exit();
+	void guiEvent(ofxUIEventArgs &e);
+	
 private:
 	void setupParameters();
 	void setupWindow();
+	void setupGUI();
 	void setupOpenCL();
+	void setupOpenGL();
 	void setupParticles();
 	void setupPosition(int i);
 	
 	void drawParticles();
 	void drawInfos();
+	void drawGUI();
+	void drawOffScreen();
 };
 
 //------------------------------------------------------------------------------

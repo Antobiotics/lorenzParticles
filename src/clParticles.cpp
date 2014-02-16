@@ -39,7 +39,17 @@ float dTime;
 
 int pointSize;
 
+float fadeSpeed;
+float blurAmount;
+
 ofImage particuleTex;
+
+ofFbo fboBlur;
+ofFbo fboPrev;
+ofFbo fboNew;
+ofShader blurShader;
+
+ofxUICanvas *gui;
 
 //------------------------------------------------------------------------------
 //																		   SETUP
@@ -55,9 +65,21 @@ void clParticles::setupWindow() {
 }
 
 //------------------------------------------------------------------------------
+void clParticles::setupGUI() {
+	gui = new ofxUICanvas();
+	gui->init(0, ofGetHeight()/8, ofGetWidth()/6, ofGetHeight());
+	gui->addSlider("Blur Amount", 0, 50, blurAmount);
+	
+	ofAddListener(gui->newGUIEvent, this, &clParticles::guiEvent);
+	gui->autoSizeToFitWidgets();
+	gui->loadSettings("UISettings.xml");
+}
+//------------------------------------------------------------------------------
 void clParticles::setupParameters() {
 	backgroundColor = *new ofColor(123, 12, 55);
-	pointSize = 3;
+	pointSize = 2;
+	fadeSpeed = 0.25f;
+	blurAmount = 1;
 	currentTime = 0;
 	dTime = 0.01;
 }
@@ -93,6 +115,10 @@ void clParticles::setupOpenCL() {
 	clLorenzKernel->setArg(kArg_dTime, dTime);
 }
 //------------------------------------------------------------------------------
+void clParticles::setupOpenGL() {
+	blurShader.load("shaders/blur2");
+}
+//------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
 	initPos.x = ofGetWidth() / 2;
 	initPos.y = ofGetHeight() / 2;
@@ -119,28 +145,65 @@ void clParticles::setupParticles() {
 //  																		DRAW
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
+void clParticles::drawOffScreen() {
+	
+	fboPrev.begin();
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		float color = 1.0f - fadeSpeed;
+		
+		glColor4f(color, color, color, 1.0f);
+		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+		
+		glColor3f(1.0f, 1.0f, 1.0f);
+		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+	}
+	fboPrev.end();
+	
+	fboBlur.begin();
+	{
+		blurShader.begin();
+		{
+			float invWidth = 1.0f / fboBlur.getWidth();
+			float invHeight = 1.0f / fboBlur.getHeight();
+			blurShader.setUniform1f("amountX", invWidth * blurAmount);
+			blurShader.setUniform1f("amountY", invHeight * blurAmount);
+			fboPrev.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+		}
+		blurShader.end();
+	}
+	fboBlur.end();
+}
+
+//------------------------------------------------------------------------------
 void clParticles::drawParticles() {
 	//
 	glPushMatrix();
+	{
 		glColor3f(1.0f, 1.0f, 1.0f);
-
 		glEnable(GL_POINT_SPRITE);
+		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 		glEnable(GL_POINT_SMOOTH);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE);
 		glPointSize(pointSize);
 
-	opencl.finish(); // block previously queued OpenCL commands.
-	glEnableClientState(GL_VERTEX_ARRAY);
-	
+		opencl.flush(); // block previously queued OpenCL commands.
+		glEnableClientState(GL_VERTEX_ARRAY);
+
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-		glVertexPointer(2, GL_FLOAT, 0, NULL);
-//	particuleTex.getTextureReference().bind();
-		glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
-//	particuleTex.getTextureReference().unbind();
+		{
+			glVertexPointer(2, GL_FLOAT, 0, NULL);
+			particuleTex.getTextureReference().bind();
+			glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+			particuleTex.getTextureReference().unbind();
+		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+	}
 	glPopMatrix();
 	//
+	drawOffScreen();
 }
 
 //------------------------------------------------------------------------------
@@ -149,6 +212,10 @@ void clParticles::drawInfos() {
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
 				  "\nnumber of particles: " + ofToString(NUM_PARTICLES);
 	ofDrawBitmapString(info, 20, 20);
+}
+//------------------------------------------------------------------------------
+void clParticles::drawGUI() {
+	gui->draw();
 }
 
 //------------------------------------------------------------------------------
@@ -162,8 +229,14 @@ void clParticles::setup() {
 	// Initialise the window:
 	setupWindow();
 
+	// Initialise the GUI components:
+	setupGUI();
+	
 	// Initialise OpenCL:
 	setupOpenCL();
+	
+	// Initialiser OpenGL:
+	setupOpenGL();
 	
 	// Initialise Particle System:
 	setupParticles();
@@ -202,10 +275,25 @@ void clParticles::update() {
 void clParticles::draw() {
 	drawParticles();
 	drawInfos();
+	drawGUI();
 }
 
 //------------------------------------------------------------------------------
-//																	   CALLBACKS
+//																	      EVENTS
+//------------------------------------------------------------------------------
+void clParticles::exit() {
+	gui->saveSettings("UISetting.xml");
+	delete gui;
+}
+
+//------------------------------------------------------------------------------
+void clParticles::guiEvent(ofxUIEventArgs &e) {
+	if( e.getName() == "Blur Amount") {
+		ofxUISlider *slider = e.getSlider();
+		blurAmount = slider->getScaledValue();
+	}
+}
+
 //------------------------------------------------------------------------------
 void clParticles::keyPressed(int key) {
 
