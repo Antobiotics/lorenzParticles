@@ -44,10 +44,10 @@ float blurAmount;
 
 ofImage particuleTex;
 
-ofFbo fboBlur;
-ofFbo fboPrev;
-ofFbo fboParticles;
-ofShader shaderBlurX;
+//ofFbo fboBlur;
+//ofFbo fboPrev;
+//ofFbo fboParticles;
+//ofShader shaderBlurX;
 
 ofxUICanvas *gui;
 
@@ -117,11 +117,11 @@ void clParticles::setupOpenCL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
-	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-	fboPrev.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-	
-	shaderBlurX.load("shaders/shaderBlurX");
+//	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+//	fboPrev.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+//	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+//	
+//	shaderBlurX.load("shaders/shaderBlurX");
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -187,13 +187,13 @@ void clParticles::drawFBOs() {
 //	glColor3f(1.0f, 1.0f, 1.0f);
 //	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
 //	fboParticles.draw(0, 0, ofGetWidth(), ofGetHeight());
-	drawParticles();
+//	drawParticles();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
 	glPushMatrix();
-	{
+//	{
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glEnable(GL_POINT_SPRITE);
 		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
@@ -202,18 +202,18 @@ void clParticles::drawParticles() {
 		glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE);
 		glPointSize(pointSize);
 
-		opencl.flush(); // block previously queued OpenCL commands.
+		opencl.finish(); // block previously queued OpenCL commands.
 		glEnableClientState(GL_VERTEX_ARRAY);
 
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-		{
+//		{
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 //			particuleTex.getTextureReference().bind();
 			glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
 //			particuleTex.getTextureReference().unbind();
-		}
+//		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
-	}
+//	}
 	glPopMatrix();
 }
 
@@ -241,7 +241,7 @@ void clParticles::setup() {
 	setupWindow();
 
 	// Initialise the GUI components:
-	setupGUI();
+//	setupGUI();
 	
 	// Initialise OpenCL:
 	setupOpenCL();
@@ -286,16 +286,16 @@ void clParticles::update() {
 void clParticles::draw() {
 //	drawFBOs();
 	drawParticles();
-	drawInfos();
-	drawGUI();
+//	drawInfos();
+//	drawGUI();
 }
 
 //------------------------------------------------------------------------------
 //																	      EVENTS
 //------------------------------------------------------------------------------
 void clParticles::exit() {
-	gui->saveSettings("UISetting.xml");
-	delete gui;
+//	gui->saveSettings("UISetting.xml");
+//	delete gui;
 }
 
 //------------------------------------------------------------------------------
@@ -342,9 +342,9 @@ void clParticles::mouseReleased(int x, int y, int button) {
 
 //------------------------------------------------------------------------------
 void clParticles::windowResized(int w, int h) {
-	fboPrev.allocate(w, h);
-	fboParticles.allocate(w, h);
-	fboBlur.allocate(w, h);
+//	fboPrev.allocate(w, h);
+//	fboParticles.allocate(w, h);
+//	fboBlur.allocate(w, h);
 }
 
 //------------------------------------------------------------------------------
