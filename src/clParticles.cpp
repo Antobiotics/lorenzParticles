@@ -3,7 +3,7 @@
 //----------------------
 
 #define USE_OPENGL_CONTEXT
-#define NUM_PARTICLES (1000 * 100)
+#define MAX_NUM_PARTICLES ( 512 * 256 )
 
 using namespace std;
 
@@ -21,9 +21,9 @@ using namespace std;
 //------------------------------------------------------------------------------
 msa::OpenCL opencl;
 
-Particle particles[NUM_PARTICLES];
+Particle particles[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemParticles; // Stores particles.
-float2 particlesPos[NUM_PARTICLES];
+float2 particlesPos[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
 msa::OpenCLKernel *clLorenzKernel;
 
@@ -37,8 +37,8 @@ float2 dimensions;
 float currentTime;
 float dTime;
 
-int pointSize;
-
+unsigned int numParticles;
+unsigned int pointSize;
 float fadeSpeed;
 float blurAmount;
 
@@ -81,6 +81,7 @@ void clParticles::setupGUI() {
 void clParticles::setupParameters() {
 //	backgroundColor = *new ofColor(123, 12, 55);
 	backgroundColor = *new ofColor(255, 255, 255);
+	numParticles = MAX_NUM_PARTICLES;
 	pointSize = 10;
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
@@ -95,7 +96,7 @@ void clParticles::setupOpenCL() {
 	glGenBuffersARB(1, vbo); // Create a new buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]); // Bind the buffer object.
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-					sizeof(float2) * NUM_PARTICLES,
+					sizeof(float2) * MAX_NUM_PARTICLES,
 					particlesPos,
 					GL_STREAM_COPY_ARB); // Copy data to the buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
@@ -106,7 +107,7 @@ void clParticles::setupOpenCL() {
 	// Load the kernel:
 	clLorenzKernel = opencl.loadKernel("updateParticle");
 	
-	clMemParticles.initBuffer(sizeof(Particle) * NUM_PARTICLES, CL_MEM_READ_WRITE, particles);
+	clMemParticles.initBuffer(sizeof(Particle) * MAX_NUM_PARTICLES, CL_MEM_READ_WRITE, particles);
 	clMemPosVBO.initFromGLObject(vbo[0]);
 
 	// Bind variables to the kernel
@@ -135,7 +136,7 @@ void clParticles::setupPosition(int i) {
 
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
-	for(int i = 0; i < NUM_PARTICLES; i++) {
+	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {
 		Particle *p = &particles[i];
 		p->vel.set(ofRandom(-1, 1), ofRandom(-1, 1));
 		p->mass = ofRandom(0.5, 1);
@@ -214,7 +215,7 @@ void clParticles::drawParticles() {
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 			particuleTex.getTextureReference().bind();
 			{
-				glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+				glDrawArrays(GL_POINTS, 0, numParticles);
 			}
 			particuleTex.getTextureReference().unbind();
 		}
@@ -227,7 +228,7 @@ void clParticles::drawParticles() {
 void clParticles::drawInfos() {
 	glColor3f(0.0f, 0.0f, 0.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
-				  "\nnumber of particles: " + ofToString(NUM_PARTICLES) +
+				  "\nnumber of particles: " + ofToString(numParticles) +
 				  "\nPointSize: " + ofToString(pointSize);
 	ofDrawBitmapString(info, 20, 20);
 }
@@ -281,7 +282,7 @@ void clParticles::update() {
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
                               1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
-	clLorenzKernel->run1D(NUM_PARTICLES);
+	clLorenzKernel->run1D(MAX_NUM_PARTICLES);
 	clEnqueueReleaseGLObjects(opencl.getQueue(),
                               1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
     
@@ -324,6 +325,15 @@ void clParticles::keyPressed(int key) {
 	}
 	if(key == OF_KEY_LEFT && pointSize > 0) {
 		pointSize--;
+	}
+	if(key == OF_KEY_UP) {
+		numParticles >> 2;
+		if(numParticles > MAX_NUM_PARTICLES) {
+			numParticles = MAX_NUM_PARTICLES;
+		}
+	}
+	if(key == OF_KEY_DOWN) {
+		numParticles << 2;
 	}
 }
 
