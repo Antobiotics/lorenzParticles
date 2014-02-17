@@ -46,7 +46,7 @@ ofImage particuleTex;
 
 ofFbo fboBlur;
 ofFbo fboPrev;
-ofFbo fboNew;
+ofFbo fboParticles;
 ofShader shaderBlurX;
 
 ofxUICanvas *gui;
@@ -119,7 +119,7 @@ void clParticles::setupOpenCL() {
 void clParticles::setupOpenGL() {
 	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	fboPrev.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-	fboNew.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	
 	shaderBlurX.load("shaders/shaderBlurX");
 }
@@ -151,12 +151,13 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-//	fboNew.begin();
+//	fboParticles.begin();
 //	{
-//
+//		ofClear(0, 0, 0);
+//		drawParticles();
 //	}
-//	fboNew.end();
-//	
+//	fboParticles.end();
+//
 //	fboPrev.begin();
 //	{
 //		glEnable(GL_BLEND);
@@ -171,23 +172,22 @@ void clParticles::drawFBOs() {
 //	}
 //	fboPrev.end();
 	
-	fboBlur.begin();
-	{
-		ofClear(0, 0, 0);
-		shaderBlurX.begin();
-		{
-			ofClear(0, 0, 0);
-//			float invWidth = 1.0f / fboBlur.getWidth();
-//			float invHeight = 1.0f / fboBlur.getHeight();
-			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
-//			fboBlur.draw(0, 0, fboBlur.getWidth(), fboBlur.getHeight());
-		}
-		shaderBlurX.end();
-	}
-	fboBlur.end();
-	fboBlur.draw(0, 0, fboBlur.getWidth(), fboBlur.getHeight());
+//	fboBlur.begin();
+//	{
+//		ofClear(0, 0, 0);
+//		shaderBlurX.begin();
+//		{
+//			ofClear(0, 0, 0);
+//			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
+//		}
+//		shaderBlurX.end();
+//	}
+//	fboBlur.end();
+//	fboBlur.draw(0, 0, fboBlur.getWidth(), fboBlur.getHeight());
 //	glColor3f(1.0f, 1.0f, 1.0f);
 //	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
+//	fboParticles.draw(0, 0, ofGetWidth(), ofGetHeight());
+	drawParticles();
 }
 
 //------------------------------------------------------------------------------
@@ -208,14 +208,13 @@ void clParticles::drawParticles() {
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
 		{
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
-			particuleTex.getTextureReference().bind();
+//			particuleTex.getTextureReference().bind();
 			glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
-			particuleTex.getTextureReference().unbind();
+//			particuleTex.getTextureReference().unbind();
 		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	}
 	glPopMatrix();
-	drawFBOs();
 }
 
 //------------------------------------------------------------------------------
@@ -285,6 +284,7 @@ void clParticles::update() {
 //------------------------------------------------------------------------------
 
 void clParticles::draw() {
+//	drawFBOs();
 	drawParticles();
 	drawInfos();
 	drawGUI();
@@ -343,7 +343,7 @@ void clParticles::mouseReleased(int x, int y, int button) {
 //------------------------------------------------------------------------------
 void clParticles::windowResized(int w, int h) {
 	fboPrev.allocate(w, h);
-	fboNew.allocate(w, h);
+	fboParticles.allocate(w, h);
 	fboBlur.allocate(w, h);
 }
 
