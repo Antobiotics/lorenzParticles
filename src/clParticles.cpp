@@ -78,7 +78,7 @@ void clParticles::setupGUI() {
 //------------------------------------------------------------------------------
 void clParticles::setupParameters() {
 	backgroundColor = *new ofColor(123, 12, 55);
-	pointSize = 2;
+	pointSize = 10;
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
 	currentTime = 0;
@@ -210,7 +210,9 @@ void clParticles::drawParticles() {
 		{
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 			particuleTex.getTextureReference().bind();
-			glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+			{
+				glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+			}
 			particuleTex.getTextureReference().unbind();
 		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
