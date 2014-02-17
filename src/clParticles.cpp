@@ -2,8 +2,7 @@
 #include "clParticles.h"
 //----------------------
 
-#define USE_OPENGL_CONTEXT
-#define MAX_NUM_PARTICLES ( 512 * 256 )
+#define MAX_NUM_PARTICLES ( 512 * 512 )
 
 using namespace std;
 
@@ -42,12 +41,12 @@ float fadeSpeed;
 float blurAmount;
 float radius;
 
-string textureName = "spark.png";
+string textureName = "glitter.png";
 
 ofImage particuleTex;
 
-//ofFbo fboBlur;
-//ofFbo fboPrev;
+ofFbo fboBlur;
+ofFbo fboPrev;
 ofFbo fboParticles;
 ofShader shader;
 
@@ -79,7 +78,7 @@ void clParticles::setupGUI() {
 //------------------------------------------------------------------------------
 void clParticles::setupParameters() {
 	// Colors:
-	backgroundColor = *new ofColor(123, 12, 55);
+	backgroundColor = *new ofColor(255, 255, 255);
 	
 	numParticles = MAX_NUM_PARTICLES;
 	
@@ -109,7 +108,7 @@ void clParticles::setupOpenCL() {
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	
 	// Load Program:
-	opencl.loadProgramFromFile("kernels/Particle.cl");
+	opencl.loadProgramFromFile("kernels/lorenz.cl");
 	
 	// Load the kernel:
 	clKernel = opencl.loadKernel("updateParticle");
@@ -126,9 +125,9 @@ void clParticles::setupOpenCL() {
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
 	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-//	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	
-	if(shader.load("shaders/shader")) {
+	if(shader.load("shaders/blur2")) {
 		std:cout << "Shader loaded" << std::endl;
 	}
 	glPointSize(2);
@@ -163,33 +162,31 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-	drawParticles();
-
-#ifdef FBO_TEST
+//	drawParticles();
 	fboParticles.begin();
 	{
 		ofClear(255, 255, 255);
 		drawParticles();
 	}
 	fboParticles.end();
-	fboParticles.draw(0, 0);
-	fboPrev.begin();
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-		float color = 1.0f - fadeSpeed;
-		
-		glColor4f(color, color, color, 1.0f);
-		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-		
-		glColor3f(1.0f, 1.0f, 1.0f);
-		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-	}
-	fboPrev.end();
+//	fboParticles.draw(0, 0);
+//	fboPrev.begin();
+//	{
+//		glEnable(GL_BLEND);
+//		glBlendFunc(GL_ONE, GL_ONE);
+//		float color = 1.0f - fadeSpeed;
+//		
+//		glColor4f(color, color, color, 1.0f);
+//		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+//		
+//		glColor3f(1.0f, 1.0f, 1.0f);
+//		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+//	}
+//	fboPrev.end();
 	
 	fboBlur.begin();
 	{
-		ofClear(0, 0, 0);
+		ofClear(255, 255, 255);
 //		shaderBlurX.begin();
 //		{
 //			ofClear(0, 0, 0);
@@ -200,7 +197,6 @@ void clParticles::drawFBOs() {
 	}
 	fboBlur.end();
 	fboBlur.draw(0, 0);
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -209,7 +205,7 @@ void clParticles::drawParticles() {
 	{
 		opencl.finish(); // block previously queued OpenCL commands.
 
-			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+			glColor3f(0.0f, 0.0f, 0.0f);
 			glEnable(GL_POINT_SPRITE);
 			glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 			glEnable(GL_POINT_SMOOTH);
@@ -220,16 +216,16 @@ void clParticles::drawParticles() {
 			glEnableClientState(GL_VERTEX_ARRAY);
 		shader.begin();
 		{
-			shader.setUniform1f( "timeStep", ( float ) currentTime );
-			shader.setUniform2f("mouse", ofGetMouseX(), ofGetMouseY());
+			shader.setUniform1f("amountX", 1 / ofGetWidth() * blurAmount);
+			shader.setUniform1f("amountY", 1 / ofGetHeight() * blurAmount);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
 			{
 				glVertexPointer(2, GL_FLOAT, 0, NULL);
-				particuleTex.getTextureReference().bind();
+//				particuleTex.getTextureReference().bind();
 				{
 					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
 				}
-				particuleTex.getTextureReference().unbind();
+//				particuleTex.getTextureReference().unbind();
 			}
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 		}
@@ -240,7 +236,7 @@ void clParticles::drawParticles() {
 
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
-	glColor3f(1.0f, 1.0f, 1.0f);
+	glColor3f(0.0f, 0.0f, 0.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
 				  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
 				  "\nPointSize: " + ofToString(pointSize);

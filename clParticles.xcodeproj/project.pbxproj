@@ -270,7 +270,6 @@
 		E7E077E715D3B6510020DFD4 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		E7F985F515E0DE99003869B5 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E88F5D4D5E360FA5B5C8F99E /* ofxUISortableList.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUISortableList.h; path = ../../../addons/ofxUI/src/ofxUISortableList.h; sourceTree = SOURCE_ROOT; };
-		EAC686A518B254EF0005490A /* Particle.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; path = Particle.cl; sourceTree = "<group>"; };
 		EAC686A618B254F80005490A /* shader.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.frag; sourceTree = "<group>"; };
 		EAC686A718B254F80005490A /* shader.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.vert; sourceTree = "<group>"; };
 		EAFE469718B23530004F14BE /* tinyxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxml.cpp; sourceTree = "<group>"; };
@@ -727,7 +726,6 @@
 		EAFE46AB18B235E4004F14BE /* kernels */ = {
 			isa = PBXGroup;
 			children = (
-				EAC686A518B254EF0005490A /* Particle.cl */,
 				EAFE46AC18B235E4004F14BE /* lorenz.cl */,
 			);
 			path = kernels;
