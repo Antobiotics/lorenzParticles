@@ -222,9 +222,11 @@ void clParticles::drawParticles() {
 void clParticles::drawInfos() {
 	glColor3f(1.0f, 1.0f, 1.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
-				  "\nnumber of particles: " + ofToString(NUM_PARTICLES);
+				  "\nnumber of particles: " + ofToString(NUM_PARTICLES) +
+				  "\nPointSize: " + ofToString(pointSize);
 	ofDrawBitmapString(info, 20, 20);
 }
+
 //------------------------------------------------------------------------------
 void clParticles::drawGUI() {
 	gui->draw();
@@ -312,7 +314,12 @@ void clParticles::guiEvent(ofxUIEventArgs &e) {
 
 //------------------------------------------------------------------------------
 void clParticles::keyPressed(int key) {
-
+	if(key == OF_KEY_RIGHT) {
+		pointSize++;
+	}
+	if(key == OF_KEY_LEFT && pointSize > 0) {
+		pointSize--;
+	}
 }
 
 //------------------------------------------------------------------------------
