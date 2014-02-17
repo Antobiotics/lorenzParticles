@@ -18,8 +18,10 @@ typedef struct{
 
 __kernel void updateParticle(__global Particle* particles ,   //0
 							 __global float2*   posBuffer ,   //1
-								const float2    mousePos  ,   //2
-								const float2    dimensions)   //3
+							 __global float4*   colBuffer ,	  //2
+								const float4    color     ,
+								const float2    mousePos  ,   //3
+								const float2    dimensions)   //4
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
@@ -36,6 +38,7 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 	posBuffer[id] += p->vel;
 	p->vel *= DAMP;
 	posBuffer[id] = posBuffer[id] + p->vel;
+	colBuffer[id] = color;
 }
 
 
