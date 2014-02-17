@@ -241,7 +241,7 @@ void clParticles::setup() {
 	setupWindow();
 
 	// Initialise the GUI components:
-//	setupGUI();
+	setupGUI();
 	
 	// Initialise OpenCL:
 	setupOpenCL();
@@ -286,16 +286,16 @@ void clParticles::update() {
 void clParticles::draw() {
 //	drawFBOs();
 	drawParticles();
-//	drawInfos();
-//	drawGUI();
+	drawInfos();
+	drawGUI();
 }
 
 //------------------------------------------------------------------------------
 //																	      EVENTS
 //------------------------------------------------------------------------------
 void clParticles::exit() {
-//	gui->saveSettings("UISetting.xml");
-//	delete gui;
+	gui->saveSettings("UISetting.xml");
+	delete gui;
 }
 
 //------------------------------------------------------------------------------
