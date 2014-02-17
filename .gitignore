@@ -29,6 +29,7 @@
 .Trashes
 *.lock
 DerivedData/*
+*.app
 
 # Xcode
 /*/*/*.xcodeproj
