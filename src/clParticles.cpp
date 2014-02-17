@@ -187,13 +187,13 @@ void clParticles::drawFBOs() {
 //	glColor3f(1.0f, 1.0f, 1.0f);
 //	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
 //	fboParticles.draw(0, 0, ofGetWidth(), ofGetHeight());
-//	drawParticles();
+	drawParticles();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
 	glPushMatrix();
-//	{
+	{
 		glColor3f(1.0f, 1.0f, 1.0f);
 		glEnable(GL_POINT_SPRITE);
 		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
@@ -206,14 +206,14 @@ void clParticles::drawParticles() {
 		glEnableClientState(GL_VERTEX_ARRAY);
 
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-//		{
+		{
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 //			particuleTex.getTextureReference().bind();
 			glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
 //			particuleTex.getTextureReference().unbind();
-//		}
+		}
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
-//	}
+	}
 	glPopMatrix();
 }
 
@@ -284,8 +284,7 @@ void clParticles::update() {
 //------------------------------------------------------------------------------
 
 void clParticles::draw() {
-//	drawFBOs();
-	drawParticles();
+	drawFBOs();
 	drawInfos();
 	drawGUI();
 }
