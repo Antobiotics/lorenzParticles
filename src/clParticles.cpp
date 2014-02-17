@@ -47,7 +47,7 @@ ofImage particuleTex;
 ofFbo fboBlur;
 ofFbo fboPrev;
 ofFbo fboNew;
-ofShader blurShader;
+ofShader shaderBlurX;
 
 ofxUICanvas *gui;
 
@@ -117,7 +117,11 @@ void clParticles::setupOpenCL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
-	blurShader.load("shaders/blur2");
+	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	fboPrev.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	fboNew.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	
+	shaderBlurX.load("shaders/shaderBlurX");
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -146,42 +150,48 @@ void clParticles::setupParticles() {
 //  																		DRAW
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
-void clParticles::drawOffScreen() {
-	
-	fboPrev.begin();
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
-		float color = 1.0f - fadeSpeed;
-		
-		glColor4f(color, color, color, 1.0f);
-		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-		
-		glColor3f(1.0f, 1.0f, 1.0f);
-		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-	}
-	fboPrev.end();
+void clParticles::drawFBOs() {
+//	fboNew.begin();
+//	{
+//
+//	}
+//	fboNew.end();
+//	
+//	fboPrev.begin();
+//	{
+//		glEnable(GL_BLEND);
+//		glBlendFunc(GL_ONE, GL_ONE);
+//		float color = 1.0f - fadeSpeed;
+//		
+//		glColor4f(color, color, color, 1.0f);
+//		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+//		
+//		glColor3f(1.0f, 1.0f, 1.0f);
+//		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+//	}
+//	fboPrev.end();
 	
 	fboBlur.begin();
 	{
-		blurShader.begin();
+		ofClear(0, 0, 0);
+		shaderBlurX.begin();
 		{
-			float invWidth = 1.0f / fboBlur.getWidth();
-			float invHeight = 1.0f / fboBlur.getHeight();
-			blurShader.setUniform1f("amountX", invWidth * blurAmount);
-			blurShader.setUniform1f("amountY", invHeight * blurAmount);
-			fboPrev.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+			ofClear(0, 0, 0);
+//			float invWidth = 1.0f / fboBlur.getWidth();
+//			float invHeight = 1.0f / fboBlur.getHeight();
+			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
+//			fboBlur.draw(0, 0, fboBlur.getWidth(), fboBlur.getHeight());
 		}
-		blurShader.end();
+		shaderBlurX.end();
 	}
 	fboBlur.end();
-	glColor3f(1.0f, 1.0f, 1.0f);
-	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
+	fboBlur.draw(0, 0, fboBlur.getWidth(), fboBlur.getHeight());
+//	glColor3f(1.0f, 1.0f, 1.0f);
+//	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
-	//
 	glPushMatrix();
 	{
 		glColor3f(1.0f, 1.0f, 1.0f);
@@ -205,8 +215,7 @@ void clParticles::drawParticles() {
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	}
 	glPopMatrix();
-	//
-	drawOffScreen();
+	drawFBOs();
 }
 
 //------------------------------------------------------------------------------

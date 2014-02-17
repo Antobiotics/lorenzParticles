@@ -283,6 +283,12 @@
 		EA12AA3318A7A48D00C12E7F /* ofxMSATimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMSATimer.h; sourceTree = "<group>"; };
 		EA12AA3C18A7C61D00C12E7F /* lorenz.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; name = lorenz.cl; path = bin/data/kernels/lorenz.cl; sourceTree = "<group>"; };
 		EA12AA3D18A7CC8800C12E7F /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		EABD354018B20472003B9F12 /* blur2.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = blur2.frag; sourceTree = "<group>"; };
+		EABD354118B20472003B9F12 /* blur2.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = blur2.vert; sourceTree = "<group>"; };
+		EABD354218B20472003B9F12 /* shaderBlurX.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurX.frag; sourceTree = "<group>"; };
+		EABD354318B20472003B9F12 /* shaderBlurX.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurX.vert; sourceTree = "<group>"; };
+		EABD354418B20472003B9F12 /* shaderBlurY.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurY.frag; sourceTree = "<group>"; };
+		EABD354518B20472003B9F12 /* shaderBlurY.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurY.vert; sourceTree = "<group>"; };
 		EAC2618D18ACFD2200B8FF3E /* particle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = particle.h; sourceTree = "<group>"; };
 		EDFEB3D8C9183ADE3FACB4B5 /* ofxUICircleSlider.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUICircleSlider.h; path = ../../../addons/ofxUI/src/ofxUICircleSlider.h; sourceTree = SOURCE_ROOT; };
 		EF872612718328680A4B9D64 /* MSACoreCommon.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = MSACoreCommon.h; path = ../../../addons/ofxMSACore/src/MSACoreCommon.h; sourceTree = SOURCE_ROOT; };
@@ -621,6 +627,7 @@
 		E4B69B4A0A3A1720003C02F2 = {
 			isa = PBXGroup;
 			children = (
+				EABD353F18B20472003B9F12 /* shaders */,
 				EA12AA3B18A7C60600C12E7F /* kernels */,
 				E4B6FCAD0C3E899E008CF71C /* openFrameworks-Info.plist */,
 				E4EB6923138AFD0F00A09F29 /* Project.xcconfig */,
@@ -708,6 +715,20 @@
 				EA12AA3C18A7C61D00C12E7F /* lorenz.cl */,
 			);
 			name = kernels;
+			sourceTree = "<group>";
+		};
+		EABD353F18B20472003B9F12 /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				EABD354018B20472003B9F12 /* blur2.frag */,
+				EABD354118B20472003B9F12 /* blur2.vert */,
+				EABD354218B20472003B9F12 /* shaderBlurX.frag */,
+				EABD354318B20472003B9F12 /* shaderBlurX.vert */,
+				EABD354418B20472003B9F12 /* shaderBlurY.frag */,
+				EABD354518B20472003B9F12 /* shaderBlurY.vert */,
+			);
+			name = shaders;
+			path = bin/data/shaders;
 			sourceTree = "<group>";
 		};
 		F8790DCD2E062DF9AA47E810 /* ofxMSACore */ = {

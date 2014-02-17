@@ -40,7 +40,7 @@ private:
 	void drawParticles();
 	void drawInfos();
 	void drawGUI();
-	void drawOffScreen();
+	void drawFBOs();
 };
 
 //------------------------------------------------------------------------------
