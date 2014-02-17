@@ -44,10 +44,10 @@ float blurAmount;
 
 ofImage particuleTex;
 
-//ofFbo fboBlur;
-//ofFbo fboPrev;
-//ofFbo fboParticles;
-//ofShader shaderBlurX;
+ofFbo fboBlur;
+ofFbo fboPrev;
+ofFbo fboParticles;
+ofShader shaderBlurX;
 
 ofxUICanvas *gui;
 
@@ -119,8 +119,8 @@ void clParticles::setupOpenCL() {
 void clParticles::setupOpenGL() {
 //	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 //	fboPrev.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-//	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-//	
+	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
+	
 //	shaderBlurX.load("shaders/shaderBlurX");
 }
 //------------------------------------------------------------------------------
@@ -151,12 +151,13 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-//	fboParticles.begin();
-//	{
-//		ofClear(0, 0, 0);
-//		drawParticles();
-//	}
-//	fboParticles.end();
+	fboParticles.begin();
+	{
+		ofClear(0, 0, 0);
+		drawParticles();
+	}
+	fboParticles.end();
+	fboParticles.draw(0, 0);
 //
 //	fboPrev.begin();
 //	{
@@ -187,7 +188,7 @@ void clParticles::drawFBOs() {
 //	glColor3f(1.0f, 1.0f, 1.0f);
 //	fboPrev.draw(0, 0, ofGetWidth(), ofGetHeight());
 //	fboParticles.draw(0, 0, ofGetWidth(), ofGetHeight());
-	drawParticles();
+//	drawParticles();
 }
 
 //------------------------------------------------------------------------------
