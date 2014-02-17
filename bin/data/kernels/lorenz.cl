@@ -30,18 +30,19 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
-	
-	float2 diff = mousePos - posBuffer[id];
-	float invDistSQ = 1.0f / dot(diff, diff);
-	diff *= MOUSE_FORCE * invDistSQ;
-
-	p->vel += (dimensions * 0.5f - posBuffer[id]) * CENTER_FORCE * p->mass * p->mass;
-
-	float speed2 = dot(p->vel, p->vel);
-	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
-
-	posBuffer[id] += p->vel;
-	p->vel *= DAMP;
+//	
+//	float2 diff = mousePos - posBuffer[id];
+//	float invDistSQ = 1.0f / dot(diff, diff);
+//	diff *= MOUSE_FORCE * invDistSQ;
+//
+//	p->vel += (dimensions * 0.5f - posBuffer[id]) * CENTER_FORCE * p->mass * p->mass;
+//
+//	float speed2 = dot(p->vel, p->vel);
+//	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
+//
+//	posBuffer[id] += p->vel;
+//	p->vel *= DAMP;
+	posBuffer[id] = posBuffer[id] + p->vel;
 }
 
 

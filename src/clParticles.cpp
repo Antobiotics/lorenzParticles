@@ -30,7 +30,6 @@ msa::OpenCLKernel *clLorenzKernel;
 GLuint vbo[1];
 
 ofColor backgroundColor;
-float2 initPos;
 float4 parameters;
 float2 mousePos;
 float2 dimensions;
@@ -41,6 +40,7 @@ unsigned int numParticles;
 unsigned int pointSize;
 float fadeSpeed;
 float blurAmount;
+float radius;
 
 string textureName = "spark.png";
 
@@ -49,7 +49,7 @@ ofImage particuleTex;
 ofFbo fboBlur;
 ofFbo fboPrev;
 ofFbo fboParticles;
-ofShader shaderBlurX;
+ofShader shader;
 
 ofxUICanvas *gui;
 
@@ -63,7 +63,7 @@ void clParticles::setupWindow() {
 	ofBackground(backgroundColor);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetVerticalSync(false);
-	ofSetBackgroundAuto(true);
+	ofSetBackgroundAuto(false);
 }
 
 //------------------------------------------------------------------------------
@@ -82,11 +82,12 @@ void clParticles::setupParameters() {
 //	backgroundColor = *new ofColor(123, 12, 55);
 	backgroundColor = *new ofColor(255, 255, 255);
 	numParticles = MAX_NUM_PARTICLES;
-	pointSize = 10;
+	pointSize = 1;
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
 	currentTime = 0;
 	dTime = 0.01;
+	radius = 200;
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -98,7 +99,7 @@ void clParticles::setupOpenCL() {
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB,
 					sizeof(float2) * MAX_NUM_PARTICLES,
 					particlesPos,
-					GL_STREAM_COPY_ARB); // Copy data to the buffer object.
+					GL_DYNAMIC_COPY_ARB); // Copy data to the buffer object.
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 	
 	// Load Program:
@@ -124,20 +125,24 @@ void clParticles::setupOpenGL() {
 	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 //	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	
-//	shaderBlurX.load("shaders/shaderBlurX");
+	if(shader.load("shaders/shader")) {
+	std:cout << "Shader loaded" << std::endl;
+	}
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
-	initPos.x = ofGetWidth() / 2;
-	initPos.y = ofGetHeight() / 2;
-	particlesPos[i] = initPos;
+	float cTheta = particles[i].theta;
+    float cU     = particles[i].u;
+    float initPosX = ofGetWidth()/2  + radius * cos(cTheta) * sqrt(1 - cU * cU);
+    float initPosY = ofGetHeight()/2 + radius * sin(cTheta) * sqrt(1 - cU * cU);
+	particlesPos[i].set(initPosX, initPosY);
 }
 
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {
 		Particle *p = &particles[i];
-		p->vel.set(ofRandom(-1, 1), ofRandom(-1, 1));
+		p->vel.set(0, 0);
 		p->mass = ofRandom(0.5, 1);
 		p->theta = ofRandom(0, TWO_PI);
 		p->u = ofRandom(-1, 1);
@@ -154,14 +159,14 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-	fboParticles.begin();
-	{
-		ofClear(0, 0, 0);
-		drawParticles();
-	}
-	fboParticles.end();
-	fboParticles.draw(0, 0);
-
+//	fboParticles.begin();
+//	{
+//		ofClear(0, 0, 0);
+//		drawParticles();
+//	}
+//	fboParticles.end();
+//	fboParticles.draw(0, 0);
+	drawParticles();
 //	fboPrev.begin();
 //	{
 //		glEnable(GL_BLEND);
@@ -193,38 +198,72 @@ void clParticles::drawFBOs() {
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
-	glPushMatrix();
-	{
-		glColor3f(0.89f, 0.13f, 0.16f);
-		glEnable(GL_POINT_SPRITE);
-		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-		glEnable(GL_POINT_SMOOTH);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glPointSize(pointSize);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+	opencl.finish();
+	ofEnableBlendMode(OF_BLENDMODE_ADD);
+	shader.begin();
+	shader.setUniform1f( "timeStep", ( float ) currentTime );
+    shader.setUniform2f("mouse", ofGetMouseX(), ofGetMouseY());
+    
+    glPushAttrib(GL_ENABLE_BIT);
 
-		opencl.finish(); // block previously queued OpenCL commands.
-		glEnableClientState(GL_VERTEX_ARRAY);
-
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-		{
-			glVertexPointer(2, GL_FLOAT, 0, NULL);
-			particuleTex.getTextureReference().bind();
-			{
-				glDrawArrays(GL_POINTS, 0, numParticles);
-			}
-			particuleTex.getTextureReference().unbind();
-		}
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
-	}
-	glPopMatrix();
+	// setup gl state
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+	//    post.begin();
+    
+    //
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	//
+    
+	//    post.end();
+    shader.end();
+    ofDisableBlendMode( );
+	
+	ofEnableAlphaBlending( );
+	
+	glPopAttrib();
+//	glPushMatrix();
+//	{
+//		ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
+//		opencl.finish(); // block previously queued OpenCL commands.
+//
+//			glColor3f(0.89f, 0.13f, 0.16f);
+//			glEnable(GL_POINT_SPRITE);
+//			glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+//			glEnable(GL_POINT_SMOOTH);
+//			glEnable(GL_BLEND);
+//			glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//			glPointSize(pointSize);
+//
+//			glEnableClientState(GL_VERTEX_ARRAY);
+////		shaderBlurX.begin();
+////		{
+////			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
+//			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+//			{
+//				glVertexPointer(2, GL_FLOAT, 0, NULL);
+////				particuleTex.getTextureReference().bind();
+//				{
+//					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
+//				}
+////				particuleTex.getTextureReference().unbind();
+//			}
+//			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+////		}
+////		shaderBlurX.end();
+//	}
+//	glPopMatrix();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
 	glColor3f(0.0f, 0.0f, 0.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
-				  "\nnumber of particles: " + ofToString(numParticles) +
+				  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
 				  "\nPointSize: " + ofToString(pointSize);
 	ofDrawBitmapString(info, 20, 20);
 }

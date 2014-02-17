@@ -71,11 +71,11 @@
 		E7E077E815D3B6510020DFD4 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7E077E715D3B6510020DFD4 /* QTKit.framework */; };
 		E7F985F815E0DEA3003869B5 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7F985F515E0DE99003869B5 /* Accelerate.framework */; };
 		E93CBAF94F684B4F509512C2 /* MSAOpenCLBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF4226B00F398C272061B0 /* MSAOpenCLBuffer.cpp */; };
+		EAC686A418B254050005490A /* clParticles.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE46A218B235D9004F14BE /* clParticles.cpp */; };
 		EAFE469E18B23530004F14BE /* tinyxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE469718B23530004F14BE /* tinyxml.cpp */; };
 		EAFE469F18B23530004F14BE /* tinyxmlerror.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE469918B23530004F14BE /* tinyxmlerror.cpp */; };
 		EAFE46A018B23530004F14BE /* tinyxmlparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE469A18B23530004F14BE /* tinyxmlparser.cpp */; };
 		EAFE46A118B23530004F14BE /* ofxXmlSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE469C18B23530004F14BE /* ofxXmlSettings.cpp */; };
-		EAFE46A618B235D9004F14BE /* clParticles.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE46A218B235D9004F14BE /* clParticles.cpp */; };
 		EAFE46A718B235D9004F14BE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAFE46A418B235D9004F14BE /* main.cpp */; };
 		EAFE46B918B23641004F14BE /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EAFE46B818B23641004F14BE /* OpenCL.framework */; };
 		F1E8DE8734BA6F69A5112FA8 /* ofxUIBaseDraws.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28155024C27152A66926B553 /* ofxUIBaseDraws.cpp */; };
@@ -270,6 +270,11 @@
 		E7E077E715D3B6510020DFD4 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		E7F985F515E0DE99003869B5 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E88F5D4D5E360FA5B5C8F99E /* ofxUISortableList.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUISortableList.h; path = ../../../addons/ofxUI/src/ofxUISortableList.h; sourceTree = SOURCE_ROOT; };
+		EAC686A018B24B8F0005490A /* clParticlesOld.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = clParticlesOld.cpp; path = ../../../../../of_v0073_osx_release/apps/myApps/hudVoronoi/src/clParticlesOld.cpp; sourceTree = "<group>"; };
+		EAC686A118B24B8F0005490A /* clParticlesOld.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = clParticlesOld.h; path = ../../../../../of_v0073_osx_release/apps/myApps/hudVoronoi/src/clParticlesOld.h; sourceTree = "<group>"; };
+		EAC686A518B254EF0005490A /* Particle.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; path = Particle.cl; sourceTree = "<group>"; };
+		EAC686A618B254F80005490A /* shader.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.frag; sourceTree = "<group>"; };
+		EAC686A718B254F80005490A /* shader.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.vert; sourceTree = "<group>"; };
 		EAFE469718B23530004F14BE /* tinyxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxml.cpp; sourceTree = "<group>"; };
 		EAFE469818B23530004F14BE /* tinyxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tinyxml.h; sourceTree = "<group>"; };
 		EAFE469918B23530004F14BE /* tinyxmlerror.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxmlerror.cpp; sourceTree = "<group>"; };
@@ -660,6 +665,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				EAC686A018B24B8F0005490A /* clParticlesOld.cpp */,
+				EAC686A118B24B8F0005490A /* clParticlesOld.h */,
 				EAFE46A218B235D9004F14BE /* clParticles.cpp */,
 				EAFE46A318B235D9004F14BE /* clParticles.h */,
 				EAFE46A418B235D9004F14BE /* main.cpp */,
@@ -724,6 +731,7 @@
 		EAFE46AB18B235E4004F14BE /* kernels */ = {
 			isa = PBXGroup;
 			children = (
+				EAC686A518B254EF0005490A /* Particle.cl */,
 				EAFE46AC18B235E4004F14BE /* lorenz.cl */,
 			);
 			path = kernels;
@@ -732,6 +740,8 @@
 		EAFE46AD18B235E4004F14BE /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				EAC686A618B254F80005490A /* shader.frag */,
+				EAC686A718B254F80005490A /* shader.vert */,
 				EAFE46AE18B235E4004F14BE /* blur2.frag */,
 				EAFE46AF18B235E4004F14BE /* blur2.vert */,
 				EAFE46B018B235E4004F14BE /* shaderBlurX.frag */,
@@ -837,6 +847,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAC686A418B254050005490A /* clParticles.cpp in Sources */,
 				A854A26C873CB7CB18844F73 /* MSACoreGL.cpp in Sources */,
 				825FA11382B216421AC896A6 /* MSAFluidDrawerBase.cpp in Sources */,
 				5EB9303FA9B240750638AE7C /* MSAFluidSolver.cpp in Sources */,
@@ -895,7 +906,6 @@
 				04C82720B149CE576B8CBB06 /* ofxUIToggle.cpp in Sources */,
 				E3A1109F67D711D6C256031E /* ofxUIToggleMatrix.cpp in Sources */,
 				60012C723B05938A3D388335 /* ofxUIValuePlotter.cpp in Sources */,
-				EAFE46A618B235D9004F14BE /* clParticles.cpp in Sources */,
 				AE281BEBF3A00F1FC37F3DA0 /* ofxUIWaveform.cpp in Sources */,
 				82845E1F8C90E1F5A99D9868 /* ofxUIWidget.cpp in Sources */,
 				CE5D89B9893EAA12F511DCAC /* ofxUIWidgetWithLabel.cpp in Sources */,
