@@ -42,6 +42,8 @@ int pointSize;
 float fadeSpeed;
 float blurAmount;
 
+string textureName = "spark.png";
+
 ofImage particuleTex;
 
 ofFbo fboBlur;
@@ -77,7 +79,8 @@ void clParticles::setupGUI() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupParameters() {
-	backgroundColor = *new ofColor(123, 12, 55);
+//	backgroundColor = *new ofColor(123, 12, 55);
+	backgroundColor = *new ofColor(255, 255, 255);
 	pointSize = 10;
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
@@ -158,7 +161,7 @@ void clParticles::drawFBOs() {
 	}
 	fboParticles.end();
 	fboParticles.draw(0, 0);
-//
+
 //	fboPrev.begin();
 //	{
 //		glEnable(GL_BLEND);
@@ -222,7 +225,7 @@ void clParticles::drawParticles() {
 
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
-	glColor3f(1.0f, 1.0f, 1.0f);
+	glColor3f(0.0f, 0.0f, 0.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
 				  "\nnumber of particles: " + ofToString(NUM_PARTICLES) +
 				  "\nPointSize: " + ofToString(pointSize);
@@ -258,7 +261,7 @@ void clParticles::setup() {
 	setupParticles();
 	
 	ofDisableArbTex();
-	particuleTex.loadImage("glitter.png");
+	particuleTex.loadImage(textureName);
 }
 //------------------------------------------------------------------------------
 
