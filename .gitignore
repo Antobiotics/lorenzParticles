@@ -1,0 +1,43 @@
+
+# Temp
+*.*~
+
+# Vim
+*.swp
+*.swo
+
+# Compliled
+*.o
+*.a
+
+# General
+*Debug
+*Release
+[Bb]uild/*
+[Dd]ebug*/
+[Rr]elease*/
+*.app/**
+*.log
+
+# Openframework
+*/*/bin/*
+!*/*/bin/data/
+
+# MAC OSX
+._*
+.DS_Store
+.Trashes
+*.lock
+DerivedData/*
+
+# Xcode
+/*/*/*.xcodeproj
+/*/*/Project.xcconfig
+/*/*/openFrameworks-Info.plist
+*.pbxuser
+*.xcuserstate
+project.xcworkspace/*
+xcuserdata
+*.xcworkspace
+*~.nib
+

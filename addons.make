@@ -1,0 +1,9 @@
+ofxThread
+ofxBeatTracking
+ofxMSACore
+ofxMSAFluid
+ofxMSAOpenCL
+ofxMSAPhysics
+ofxMSAPingPong
+ofxMSATimer
+ofxUI
