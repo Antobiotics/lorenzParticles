@@ -270,8 +270,6 @@
 		E7E077E715D3B6510020DFD4 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		E7F985F515E0DE99003869B5 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E88F5D4D5E360FA5B5C8F99E /* ofxUISortableList.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUISortableList.h; path = ../../../addons/ofxUI/src/ofxUISortableList.h; sourceTree = SOURCE_ROOT; };
-		EAC686A018B24B8F0005490A /* clParticlesOld.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = clParticlesOld.cpp; path = ../../../../../of_v0073_osx_release/apps/myApps/hudVoronoi/src/clParticlesOld.cpp; sourceTree = "<group>"; };
-		EAC686A118B24B8F0005490A /* clParticlesOld.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = clParticlesOld.h; path = ../../../../../of_v0073_osx_release/apps/myApps/hudVoronoi/src/clParticlesOld.h; sourceTree = "<group>"; };
 		EAC686A518B254EF0005490A /* Particle.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; path = Particle.cl; sourceTree = "<group>"; };
 		EAC686A618B254F80005490A /* shader.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.frag; sourceTree = "<group>"; };
 		EAC686A718B254F80005490A /* shader.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shader.vert; sourceTree = "<group>"; };
@@ -665,8 +663,6 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				EAC686A018B24B8F0005490A /* clParticlesOld.cpp */,
-				EAC686A118B24B8F0005490A /* clParticlesOld.h */,
 				EAFE46A218B235D9004F14BE /* clParticles.cpp */,
 				EAFE46A318B235D9004F14BE /* clParticles.h */,
 				EAFE46A418B235D9004F14BE /* main.cpp */,

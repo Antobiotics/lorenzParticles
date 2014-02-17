@@ -15,6 +15,7 @@ typedef struct{
 	float2 vel;
 	float mass;
 	float dummy;
+    float theta;
     float vTheta;
     float u;
     float vU;
@@ -28,9 +29,9 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 							    const float     timeStep  ,   //5
 							    const float     dTime     )   //6
 {
-	int id = get_global_id(0);
-	__global Particle *p = &particles[id];
-//	
+//	int id = get_global_id(0);
+//	__global Particle *p = &particles[id];
+//
 //	float2 diff = mousePos - posBuffer[id];
 //	float invDistSQ = 1.0f / dot(diff, diff);
 //	diff *= MOUSE_FORCE * invDistSQ;
@@ -42,7 +43,7 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 //
 //	posBuffer[id] += p->vel;
 //	p->vel *= DAMP;
-	posBuffer[id] = posBuffer[id] + p->vel;
+//	posBuffer[id] = posBuffer[id] + p->vel;
 }
 
 

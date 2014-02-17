@@ -17,10 +17,7 @@ typedef struct{
 __kernel void updateParticle(__global Particle* particles,  //0
                              __global float2* posBuffer,    //1
                              const float2 mousePos,         //2
-                             const float2 dimensions,       //3
-                             const int    numHands,         //4
-                             const float2 hand1,            //5
-                             const float2 hand2)            //6
+                             const float2 dimensions)
 {
 
 }

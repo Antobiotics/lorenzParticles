@@ -25,7 +25,7 @@ Particle particles[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemParticles; // Stores particles.
 float2 particlesPos[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
-msa::OpenCLKernel *clLorenzKernel;
+msa::OpenCLKernel *clKernel;
 
 GLuint vbo[1];
 
@@ -46,8 +46,8 @@ string textureName = "spark.png";
 
 ofImage particuleTex;
 
-ofFbo fboBlur;
-ofFbo fboPrev;
+//ofFbo fboBlur;
+//ofFbo fboPrev;
 ofFbo fboParticles;
 ofShader shader;
 
@@ -63,7 +63,6 @@ void clParticles::setupWindow() {
 	ofBackground(backgroundColor);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetVerticalSync(false);
-	ofSetBackgroundAuto(false);
 }
 
 //------------------------------------------------------------------------------
@@ -79,14 +78,21 @@ void clParticles::setupGUI() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupParameters() {
-//	backgroundColor = *new ofColor(123, 12, 55);
-	backgroundColor = *new ofColor(255, 255, 255);
+	// Colors:
+	backgroundColor = *new ofColor(123, 12, 55);
+	
 	numParticles = MAX_NUM_PARTICLES;
-	pointSize = 1;
+	
+	// Shader Parameters:
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
+	
+	// Time variables:
 	currentTime = 0;
 	dTime = 0.01;
+	
+	// Dimensions:
+	pointSize = 1;
 	radius = 200;
 }
 //------------------------------------------------------------------------------
@@ -100,25 +106,22 @@ void clParticles::setupOpenCL() {
 					sizeof(float2) * MAX_NUM_PARTICLES,
 					particlesPos,
 					GL_DYNAMIC_COPY_ARB); // Copy data to the buffer object.
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	
 	// Load Program:
-	opencl.loadProgramFromFile("kernels/lorenz.cl");
+	opencl.loadProgramFromFile("kernels/Particle.cl");
 	
 	// Load the kernel:
-	clLorenzKernel = opencl.loadKernel("updateParticle");
+	clKernel = opencl.loadKernel("updateParticle");
 	
 	clMemParticles.initBuffer(sizeof(Particle) * MAX_NUM_PARTICLES, CL_MEM_READ_WRITE, particles);
 	clMemPosVBO.initFromGLObject(vbo[0]);
 
 	// Bind variables to the kernel
-	clLorenzKernel->setArg(kArg_particles, clMemParticles.getCLMem());
-	clLorenzKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
-	clLorenzKernel->setArg(kArg_mousePos, mousePos);
-	clLorenzKernel->setArg(kArg_dimensions, dimensions);
-	clLorenzKernel->setArg(kArg_parameters, parameters);
-	clLorenzKernel->setArg(kArg_currentTime, currentTime);
-	clLorenzKernel->setArg(kArg_dTime, dTime);
+	clKernel->setArg(kArg_particles, clMemParticles.getCLMem());
+	clKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
+	clKernel->setArg(kArg_mousePos, mousePos);
+	clKernel->setArg(kArg_dimensions, dimensions);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
@@ -126,8 +129,9 @@ void clParticles::setupOpenGL() {
 //	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	
 	if(shader.load("shaders/shader")) {
-	std:cout << "Shader loaded" << std::endl;
+		std:cout << "Shader loaded" << std::endl;
 	}
+	glPointSize(2);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -141,11 +145,11 @@ void clParticles::setupPosition(int i) {
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {
-		Particle *p = &particles[i];
-		p->vel.set(0, 0);
-		p->mass = ofRandom(0.5, 1);
-		p->theta = ofRandom(0, TWO_PI);
-		p->u = ofRandom(-1, 1);
+		Particle &p = particles[i];
+		p.vel.set(0, 0);
+		p.mass = ofRandom(0.5, 1);
+		p.theta = ofRandom(0, TWO_PI);
+		p.u = ofRandom(-1, 1);
 		setupPosition(i);
 	}
 }
@@ -159,109 +163,84 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-//	fboParticles.begin();
-//	{
-//		ofClear(0, 0, 0);
-//		drawParticles();
-//	}
-//	fboParticles.end();
-//	fboParticles.draw(0, 0);
 	drawParticles();
-//	fboPrev.begin();
-//	{
-//		glEnable(GL_BLEND);
-//		glBlendFunc(GL_ONE, GL_ONE);
-//		float color = 1.0f - fadeSpeed;
-//		
-//		glColor4f(color, color, color, 1.0f);
-//		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-//		
-//		glColor3f(1.0f, 1.0f, 1.0f);
-//		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-//	}
-//	fboPrev.end();
+
+#ifdef FBO_TEST
+	fboParticles.begin();
+	{
+		ofClear(255, 255, 255);
+		drawParticles();
+	}
+	fboParticles.end();
+	fboParticles.draw(0, 0);
+	fboPrev.begin();
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		float color = 1.0f - fadeSpeed;
+		
+		glColor4f(color, color, color, 1.0f);
+		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+		
+		glColor3f(1.0f, 1.0f, 1.0f);
+		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
+	}
+	fboPrev.end();
 	
-//	fboBlur.begin();
-//	{
-//		ofClear(0, 0, 0);
-////		shaderBlurX.begin();
-////		{
-////			ofClear(0, 0, 0);
-////			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
-////		}
-////		shaderBlurX.end();
-//		fboParticles.draw(0, 0);
-//	}
-//	fboBlur.end();
-//	fboBlur.draw(0, 0);
+	fboBlur.begin();
+	{
+		ofClear(0, 0, 0);
+//		shaderBlurX.begin();
+//		{
+//			ofClear(0, 0, 0);
+//			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
+//		}
+//		shaderBlurX.end();
+		fboParticles.draw(0, 0);
+	}
+	fboBlur.end();
+	fboBlur.draw(0, 0);
+#endif
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-	opencl.finish();
-	ofEnableBlendMode(OF_BLENDMODE_ADD);
-	shader.begin();
-	shader.setUniform1f( "timeStep", ( float ) currentTime );
-    shader.setUniform2f("mouse", ofGetMouseX(), ofGetMouseY());
-    
-    glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ENABLE_BIT);
+	{
+		opencl.finish(); // block previously queued OpenCL commands.
 
-	// setup gl state
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-	//    post.begin();
-    
-    //
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, 0);
-	glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	//
-    
-	//    post.end();
-    shader.end();
-    ofDisableBlendMode( );
-	
-	ofEnableAlphaBlending( );
-	
+			glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+			glEnable(GL_POINT_SPRITE);
+			glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
+			glEnable(GL_POINT_SMOOTH);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glPointSize(pointSize);
+
+			glEnableClientState(GL_VERTEX_ARRAY);
+		shader.begin();
+		{
+			shader.setUniform1f( "timeStep", ( float ) currentTime );
+			shader.setUniform2f("mouse", ofGetMouseX(), ofGetMouseY());
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+			{
+				glVertexPointer(2, GL_FLOAT, 0, NULL);
+				particuleTex.getTextureReference().bind();
+				{
+					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
+				}
+				particuleTex.getTextureReference().unbind();
+			}
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+		}
+		shader.end();
+	}
 	glPopAttrib();
-//	glPushMatrix();
-//	{
-//		ofTranslate(ofGetWidth()/2, ofGetHeight()/2);
-//		opencl.finish(); // block previously queued OpenCL commands.
-//
-//			glColor3f(0.89f, 0.13f, 0.16f);
-//			glEnable(GL_POINT_SPRITE);
-//			glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-//			glEnable(GL_POINT_SMOOTH);
-//			glEnable(GL_BLEND);
-//			glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//			glPointSize(pointSize);
-//
-//			glEnableClientState(GL_VERTEX_ARRAY);
-////		shaderBlurX.begin();
-////		{
-////			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
-//			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-//			{
-//				glVertexPointer(2, GL_FLOAT, 0, NULL);
-////				particuleTex.getTextureReference().bind();
-//				{
-//					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
-//				}
-////				particuleTex.getTextureReference().unbind();
-//			}
-//			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
-////		}
-////		shaderBlurX.end();
-//	}
-//	glPopMatrix();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
-	glColor3f(0.0f, 0.0f, 0.0f);
+	glColor3f(1.0f, 1.0f, 1.0f);
 	string info = "fps: " + ofToString(ofGetFrameRate()) +
 				  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
 				  "\nPointSize: " + ofToString(pointSize);
@@ -287,14 +266,14 @@ void clParticles::setup() {
 	// Initialise the GUI components:
 	setupGUI();
 	
+	// Initialise Particle System:
+	setupParticles();
+	
 	// Initialise OpenCL:
 	setupOpenCL();
 	
 	// Initialiser OpenGL:
 	setupOpenGL();
-	
-	// Initialise Particle System:
-	setupParticles();
 	
 	ofDisableArbTex();
 	particuleTex.loadImage(textureName);
@@ -309,17 +288,15 @@ void clParticles::update() {
 	dimensions.y = ofGetHeight();
 	
 	// Set Kernel Arguments:
-	clLorenzKernel->setArg(kArg_mousePos, mousePos);
-	clLorenzKernel->setArg(kArg_dimensions, dimensions);
-	clLorenzKernel->setArg(kArg_dTime, dTime);
-	clLorenzKernel->setArg(kArg_currentTime, currentTime);
-	
+	clKernel->setArg(kArg_mousePos, mousePos);
+	clKernel->setArg(kArg_dimensions, dimensions);
+
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
-	clLorenzKernel->run1D(MAX_NUM_PARTICLES);
+                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
+	clKernel->run1D(MAX_NUM_PARTICLES);
 	clEnqueueReleaseGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0, NULL, NULL);
+                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
     
     // Update Global Variables:
     currentTime += dTime;
