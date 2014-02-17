@@ -30,7 +30,8 @@
 *.lock
 DerivedData/*
 *.app
-
+bin/clParticles.app
+bin/clParticlesDebug.app
 # Xcode
 /*/*/*.xcodeproj
 /*/*/Project.xcconfig
