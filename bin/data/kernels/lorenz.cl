@@ -1,8 +1,9 @@
-#define DAMP			0.2f
+#define DAMP			0.95f
 #define CENTER_FORCE	0.037f
 #define MOUSE_FORCE		300.0f
 #define MIN_SPEED		0.1f
 #define PI              3.1415926
+
 #define kArg_particles  0
 #define kArg_posBuffer  1
 #define kArg_mousePos   2
@@ -40,13 +41,14 @@ __kernel void updateParticle(__global Particle* particles   ,
 
 	float AmpFactor = 60;
 	float fftPower = 0.1;
-	if( avgPower > 0) {
-		fftPower = avgPower;
-	}
+	fftPower = prevAvgPower - avgPower * 0.1;
+//	if( avgPower > 0) {
+//		fftPower = avgPower;
+//	}
 	newPos.x = origin.x + (fftPower * AmpFactor * p->mass + 75) * cos(pAngle);
 	newPos.y = origin.y + (fftPower * AmpFactor * p->mass + 75) * sin(pAngle);
 	
-	p->vel += (newPos - currentPos) * p->mass * p->mass;
+	p->vel += (newPos - currentPos) * fftPower * p->mass;
 	
 	if(newPos.x > dimensions.x || newPos.x < 0) {
 		newPos.x = currentPos.x - p->vel.x;
@@ -54,7 +56,7 @@ __kernel void updateParticle(__global Particle* particles   ,
 	}
 
 	if(newPos.y > dimensions.y || newPos.y < 0) {
-		newPos.y = currentPos.y- p->vel.y;
+		newPos.y = currentPos.y - p->vel.y;
 		p->vel.y *= -1.0f;
 	}
 	
@@ -69,8 +71,10 @@ __kernel void updateParticle(__global Particle* particles   ,
 //
 	posBuffer[id] += p->vel;
 	p->vel *= DAMP;
-
-	colBuffer[id] = color;
+	
+	float4 colorR = color;
+	colorR.y = fftPower * 1.2;
+	colBuffer[id] = colorR;
 }
 
 

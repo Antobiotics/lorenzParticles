@@ -2,7 +2,7 @@
 #include "clParticles.h"
 //----------------------
 
-#define MAX_NUM_PARTICLES ( 512 * 256 )
+#define MAX_NUM_PARTICLES ( 1024 * 512 )
 
 using namespace std;
 
@@ -98,7 +98,7 @@ void clParticles::setupParameters() {
 	// Colors:
 	backgroundColor = *new ofColor(255, 255, 255);
 	color.x = 1.0f;
-	color.y = 0.25;
+	color.y = 0.74f;
 	color.z = 0.33;
 	color.w = 1.0f;
 	
