@@ -38,6 +38,7 @@ private:
 	void setupOpenGL();
 	void setupParticles();
 	void setupPosition(int i);
+	void setupNodes();
 	
 	void drawParticles();
 	void drawInfos();

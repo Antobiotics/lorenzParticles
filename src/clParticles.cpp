@@ -3,18 +3,19 @@
 //----------------------
 
 #define MAX_NUM_PARTICLES ( 1024 * 512 )
-
+#define MAX_NUM_NODES 8
 using namespace std;
 
 #define kArg_particles    0
-#define kArg_posBuffer    1
-#define kArg_colBuffer    2
-#define kArg_origin       3
-#define kArg_color        4
-#define kArg_mousePos     5
-#define kArg_dimensions   6
-#define kArg_prevAvgPower 7
-#define kArg_fftPower     8
+#define kArg_nodes        1
+#define kArg_posBuffer    2
+#define kArg_colBuffer    3
+#define kArg_origin       4
+#define kArg_color        5
+#define kArg_mousePos     6
+#define kArg_dimensions   7
+#define kArg_prevAvgPower 8
+#define kArg_fftPower     9
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
@@ -31,6 +32,9 @@ msa::OpenCLBuffer clMemPosVBO;    // Stores particlesPos.
 float4 colorBuffer[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemColVBO;    // Stores colors.
 msa::OpenCLKernel *clKernel;
+
+Node nodes[MAX_NUM_NODES];
+msa::OpenCLBuffer clMemNodes;
 
 GLuint vbo[2];
 
@@ -160,11 +164,13 @@ void clParticles::setupOpenCL() {
 	clKernel = opencl.loadKernel("updateParticle");
 	
 	clMemParticles.initBuffer(sizeof(Particle) * MAX_NUM_PARTICLES, CL_MEM_READ_WRITE, particles);
+	clMemNodes.initBuffer(sizeof(Node)* MAX_NUM_NODES, CL_MEM_READ_WRITE, nodes);
 	clMemPosVBO.initFromGLObject(vbo[0]);
 	clMemColVBO.initFromGLObject(vbo[1]);
 
 	// Bind variables to the kernel
 	clKernel->setArg(kArg_particles, clMemParticles.getCLMem());
+	clKernel->setArg(kArg_nodes, clMemNodes.getCLMem());
 	clKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
 	clKernel->setArg(kArg_colBuffer, clMemColVBO.getCLMem());
 	clKernel->setArg(kArg_origin, initPos);
@@ -207,6 +213,14 @@ void clParticles::setupPosition(int i) {
 	positionBuffer[i].set(initPos.x, initPos.y);
 }
 
+//------------------------------------------------------------------------------
+void clParticles::setupNodes() {
+	for (int i = 0; i < MAX_NUM_NODES; i++) {
+		Node &node = nodes[i];
+		node.pos.set(ofRandom(0, ofGetWidth()), ofRandom(0, ofGetHeight()));
+		node.attractForce = ofRandomf();
+	}
+}
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {

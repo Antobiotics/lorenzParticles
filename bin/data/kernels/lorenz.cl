@@ -1,9 +1,11 @@
+//------------------------------------------------------------------------------
 #define DAMP			0.95f
 #define CENTER_FORCE	0.037f
 #define MOUSE_FORCE		300.0f
 #define MIN_SPEED		0.1f
 #define PI              3.1415926
 
+//------------------------------------------------------------------------------
 #define kArg_particles  0
 #define kArg_posBuffer  1
 #define kArg_mousePos   2
@@ -12,18 +14,29 @@
 #define kArg_timeStep   5
 #define kArg_dTime		6
 
+//------------------------------------------------------------------------------
 typedef struct{
 	float2 vel;
 	float mass;
 	float u;
 } Particle;
 
+//------------------------------------------------------------------------------
+typedef struct {
+	float2 pos;
+	float spread;
+	float attractForce;
+} Node;
+
+//------------------------------------------------------------------------------
 float rand(float2 co) {
 	float i;
 	return fabs(fract(sin(dot(co.xy ,make_float2(12.9898f, 78.233f))) * 43758.5453f, &i));
 }
 
+//------------------------------------------------------------------------------
 __kernel void updateParticle(__global Particle* particles   ,
+							 __global Node*     nodes       ,
 							 __global float2*   posBuffer   ,
 							 __global float4*   colBuffer   ,
 							 	const float2    origin      ,
@@ -45,8 +58,8 @@ __kernel void updateParticle(__global Particle* particles   ,
 //	if( avgPower > 0) {
 //		fftPower = avgPower;
 //	}
-	newPos.x = origin.x + (fftPower * AmpFactor * p->mass + 75) * cos(pAngle);
-	newPos.y = origin.y + (fftPower * AmpFactor * p->mass + 75) * sin(pAngle);
+	newPos.x = origin.x + (fftPower * AmpFactor * p->mass + 35) * cos(pAngle);
+	newPos.y = origin.y + (fftPower * AmpFactor * p->mass + 35) * sin(pAngle);
 	
 	p->vel += (newPos - currentPos) * fftPower * p->mass;
 	
@@ -60,23 +73,16 @@ __kernel void updateParticle(__global Particle* particles   ,
 		p->vel.y *= -1.0f;
 	}
 	
-	float2 diff = mousePos - posBuffer[id];
-//	float invDistSQ = 1.0f / dot(diff, diff);
-//	diff *= MOUSE_FORCE * invDistSQ;
-//
-//	p->vel += (dimensions * 0.5f - posBuffer[id]) * CENTER_FORCE * p->mass * p->mass;
-//
-//	float speed2 = dot(p->vel, p->vel);
-//	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
-//
 	posBuffer[id] += p->vel;
 	p->vel *= DAMP;
 	
+	// Colors:
 	float4 colorR = color;
-	colorR.y = fftPower * 1.2;
+//	colorR.y = fftPower * 1.2;
 	colBuffer[id] = colorR;
 }
 
+//------------------------------------------------------------------------------
 
 
 
