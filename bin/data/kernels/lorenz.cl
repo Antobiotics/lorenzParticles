@@ -22,27 +22,31 @@ float rand(float2 co) {
 	return fabs(fract(sin(dot(co.xy ,make_float2(12.9898f, 78.233f))) * 43758.5453f, &i));
 }
 
-__kernel void updateParticle(__global Particle* particles ,  
-							 __global float2*   posBuffer ,
-							 __global float4*   colBuffer ,
-							 	const float2    origin    ,
-								const float4    color     ,
-								const float2    mousePos  ,
-								const float2    dimensions,
-							 	const float     avgPower  )
+__kernel void updateParticle(__global Particle* particles   ,
+							 __global float2*   posBuffer   ,
+							 __global float4*   colBuffer   ,
+							 	const float2    origin      ,
+								const float4    color       ,
+								const float2    mousePos    ,
+								const float2    dimensions  ,
+							 	const float     prevAvgPower,
+							 	const float     avgPower    )
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
 	float2 currentPos = posBuffer[id];
-	float2 newPos = currentPos;
+	float2 newPos;
 	float pAngle = p->u;
 
-	float AmpFactor = 10;
+	float AmpFactor = 60;
+	float fftPower = 0.1;
+	if( avgPower > 0) {
+		fftPower = avgPower;
+	}
+	newPos.x = origin.x + (fftPower * AmpFactor * p->mass + 75) * cos(pAngle);
+	newPos.y = origin.y + (fftPower * AmpFactor * p->mass + 75) * sin(pAngle);
 	
-	newPos.x = origin.x + (avgPower * AmpFactor + 50) * cos(pAngle);
-	newPos.y = origin.y + (avgPower * AmpFactor + 50) * sin(pAngle);
-	
-	p->vel = newPos - currentPos;
+	p->vel += (newPos - currentPos) * p->mass * p->mass;
 	
 	if(newPos.x > dimensions.x || newPos.x < 0) {
 		newPos.x = currentPos.x - p->vel.x;
@@ -64,7 +68,7 @@ __kernel void updateParticle(__global Particle* particles ,
 //	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
 //
 	posBuffer[id] += p->vel;
-//	p->vel *= DAMP;
+	p->vel *= DAMP;
 
 	colBuffer[id] = color;
 }

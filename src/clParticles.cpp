@@ -6,14 +6,15 @@
 
 using namespace std;
 
-#define kArg_particles   0
-#define kArg_posBuffer   1
-#define kArg_colBuffer   2
-#define kArg_origin      3
-#define kArg_color       4
-#define kArg_mousePos    5
-#define kArg_dimensions  6
-#define kArg_fftPower    7
+#define kArg_particles    0
+#define kArg_posBuffer    1
+#define kArg_colBuffer    2
+#define kArg_origin       3
+#define kArg_color        4
+#define kArg_mousePos     5
+#define kArg_dimensions   6
+#define kArg_prevAvgPower 7
+#define kArg_fftPower     8
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
@@ -47,6 +48,7 @@ bool  bDoVSync;
 float fadeSpeed;
 float blurAmount;
 float radius;
+float prevAvgPower;
 float2 initPos;
 
 #ifdef FBOS
@@ -105,6 +107,9 @@ void clParticles::setupParameters() {
 	// Shader Parameters:
 	fadeSpeed = 0.25f;
 	blurAmount = 1;
+	
+	// Kernel Parameters:
+	prevAvgPower = 0.1;
 	
 	// Time variables:
 	currentTime = 0;
@@ -166,6 +171,7 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_color, color);
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
+	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
 	clKernel->setArg(kArg_fftPower, fft.avgPower);
 }
 //------------------------------------------------------------------------------
@@ -344,6 +350,7 @@ void clParticles::update() {
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
+	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
 	clKernel->setArg(kArg_fftPower, fft.avgPower);
 
     // Update the OpenCL kernel:
@@ -359,6 +366,7 @@ void clParticles::update() {
 
     // Update Global Variables:
     currentTime += dTime;
+	prevAvgPower = fft.avgPower;
 }
 
 //------------------------------------------------------------------------------
