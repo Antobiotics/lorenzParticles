@@ -2,7 +2,7 @@
 #define CENTER_FORCE	0.037f
 #define MOUSE_FORCE		300.0f
 #define MIN_SPEED		0.1f
-
+#define PI              3.1415926
 #define kArg_particles  0
 #define kArg_posBuffer  1
 #define kArg_mousePos   2
@@ -17,17 +17,32 @@ typedef struct{
 	float u;
 } Particle;
 
-__kernel void updateParticle(__global Particle* particles ,   //0
-							 __global float2*   posBuffer ,   //1
-							 __global float4*   colBuffer ,	  //2
+float rand(float2 co) {
+	float i;
+	return fabs(fract(sin(dot(co.xy ,make_float2(12.9898f, 78.233f))) * 43758.5453f, &i));
+}
+
+__kernel void updateParticle(__global Particle* particles ,  
+							 __global float2*   posBuffer ,
+							 __global float4*   colBuffer ,
+							 	const float2    origin    ,
 								const float4    color     ,
-								const float2    mousePos  ,   //3
-								const float2    dimensions)   //4
+								const float2    mousePos  ,
+								const float2    dimensions,
+							 	const float     avgPower  )
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
 	float2 currentPos = posBuffer[id];
-	float2 newPos = currentPos + p->vel;
+	float2 newPos = currentPos;
+	float pAngle = p->u;
+
+	float AmpFactor = 10;
+	
+	newPos.x = origin.x + (avgPower * AmpFactor + 50) * cos(pAngle);
+	newPos.y = origin.y + (avgPower * AmpFactor + 50) * sin(pAngle);
+	
+	p->vel = newPos - currentPos;
 	
 	if(newPos.x > dimensions.x || newPos.x < 0) {
 		newPos.x = currentPos.x - p->vel.x;
@@ -39,7 +54,7 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 		p->vel.y *= -1.0f;
 	}
 	
-//	float2 diff = mousePos - posBuffer[id];
+	float2 diff = mousePos - posBuffer[id];
 //	float invDistSQ = 1.0f / dot(diff, diff);
 //	diff *= MOUSE_FORCE * invDistSQ;
 //
@@ -48,9 +63,9 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 //	float speed2 = dot(p->vel, p->vel);
 //	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
 //
-//	posBuffer[id] += p->vel;
+	posBuffer[id] += p->vel;
 //	p->vel *= DAMP;
-	posBuffer[id] = newPos;
+
 	colBuffer[id] = color;
 }
 

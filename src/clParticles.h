@@ -43,6 +43,7 @@ private:
 	void drawInfos();
 	void drawGUI();
 	void drawFBOs();
+	void drawFFT();
 };
 
 //------------------------------------------------------------------------------

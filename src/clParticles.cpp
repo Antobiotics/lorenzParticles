@@ -9,9 +9,11 @@ using namespace std;
 #define kArg_particles   0
 #define kArg_posBuffer   1
 #define kArg_colBuffer   2
-#define kArg_color       3
-#define kArg_mousePos    4
-#define kArg_dimensions  5
+#define kArg_origin      3
+#define kArg_color       4
+#define kArg_mousePos    5
+#define kArg_dimensions  6
+#define kArg_fftPower    7
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
@@ -45,6 +47,7 @@ bool  bDoVSync;
 float fadeSpeed;
 float blurAmount;
 float radius;
+float2 initPos;
 
 #ifdef FBOS
 	ofFbo fboBlur;
@@ -109,14 +112,14 @@ void clParticles::setupParameters() {
 	
 	// Dimensions:
 	pointSize = 1;
-	radius = 200;
+	radius = 50;
 	
 	// Window:
 	bDoVSync = true;
 }
 //------------------------------------------------------------------------------
 void clParticles::setupFFT() {
-	fft.setup(44100, 1024);
+	fft.setup(44100, 2048, 0, 1, 4, 1024);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -159,9 +162,11 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_particles, clMemParticles.getCLMem());
 	clKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
 	clKernel->setArg(kArg_colBuffer, clMemColVBO.getCLMem());
+	clKernel->setArg(kArg_origin, initPos);
 	clKernel->setArg(kArg_color, color);
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
+	clKernel->setArg(kArg_fftPower, fft.avgPower);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
@@ -191,17 +196,17 @@ void clParticles::setupOpenGL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
-    float initPosX = ofGetWidth() / 2 + radius * cos(particles[i].u);
-    float initPosY = ofGetHeight() / 2 + radius * sin(particles[i].u);
-	positionBuffer[i].set(initPosX, initPosY);
+    initPos.x = ofGetWidth() / 2 + radius * cos(particles[i].u);
+    initPos.y = ofGetHeight() / 2 + radius * sin(particles[i].u);
+	positionBuffer[i].set(initPos.x, initPos.y);
 }
 
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {
 		Particle &p = particles[i];
-		p.vel.set(0, 0);
-		p.mass = ofRandom(0.5, 1);
+		p.vel.set(ofRandomf(), ofRandomf()); // belongs to [-1, 1]
+		p.mass = ofRandom(0.1, 1);
 		p.u = ofRandom(0, TWO_PI);
 		setupPosition(i);
 	}
@@ -263,6 +268,7 @@ void clParticles::drawParticles() {
 	glPopAttrib();
 }
 
+
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
 	glPushMatrix();
@@ -275,7 +281,12 @@ void clParticles::drawInfos() {
 	}
 	glPopMatrix();
 }
-
+//------------------------------------------------------------------------------
+void clParticles::drawFFT() {
+//	ofSetColor(255, 0, 0);
+//	ofCircle(ofGetWidth()/2, ofGetHeight() /2, fft.avgPower * 100);
+//	std::cout << fft.avgPower << std::endl;
+}
 //------------------------------------------------------------------------------
 void clParticles::drawGUI() {
 	glPushMatrix();
@@ -333,6 +344,7 @@ void clParticles::update() {
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
+	clKernel->setArg(kArg_fftPower, fft.avgPower);
 
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
@@ -356,9 +368,10 @@ void clParticles::draw() {
 #ifdef FBOS
 	drawFBOs();
 #endif
-	fft.draw(0, 0);
+//	fft.draw(0, 0);
 	drawInfos();
 	drawGUI();
+	drawFFT();
 }
 
 //------------------------------------------------------------------------------
