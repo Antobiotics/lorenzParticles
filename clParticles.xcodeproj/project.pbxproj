@@ -297,12 +297,6 @@
 		EAFE46A518B235D9004F14BE /* particle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = particle.h; sourceTree = "<group>"; };
 		EAFE46A918B235E4004F14BE /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 		EAFE46AC18B235E4004F14BE /* lorenz.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; path = lorenz.cl; sourceTree = "<group>"; };
-		EAFE46AE18B235E4004F14BE /* blur2.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = blur2.frag; sourceTree = "<group>"; };
-		EAFE46AF18B235E4004F14BE /* blur2.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = blur2.vert; sourceTree = "<group>"; };
-		EAFE46B018B235E4004F14BE /* shaderBlurX.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurX.frag; sourceTree = "<group>"; };
-		EAFE46B118B235E4004F14BE /* shaderBlurX.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurX.vert; sourceTree = "<group>"; };
-		EAFE46B218B235E4004F14BE /* shaderBlurY.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurY.frag; sourceTree = "<group>"; };
-		EAFE46B318B235E4004F14BE /* shaderBlurY.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shaderBlurY.vert; sourceTree = "<group>"; };
 		EAFE46B518B235E4004F14BE /* UISetting.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = UISetting.xml; sourceTree = "<group>"; };
 		EAFE46B818B23641004F14BE /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		EDFEB3D8C9183ADE3FACB4B5 /* ofxUICircleSlider.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUICircleSlider.h; path = ../../../addons/ofxUI/src/ofxUICircleSlider.h; sourceTree = SOURCE_ROOT; };
@@ -772,12 +766,6 @@
 			children = (
 				EAC686A618B254F80005490A /* shader.frag */,
 				EAC686A718B254F80005490A /* shader.vert */,
-				EAFE46AE18B235E4004F14BE /* blur2.frag */,
-				EAFE46AF18B235E4004F14BE /* blur2.vert */,
-				EAFE46B018B235E4004F14BE /* shaderBlurX.frag */,
-				EAFE46B118B235E4004F14BE /* shaderBlurX.vert */,
-				EAFE46B218B235E4004F14BE /* shaderBlurY.frag */,
-				EAFE46B318B235E4004F14BE /* shaderBlurY.vert */,
 			);
 			path = shaders;
 			sourceTree = "<group>";
