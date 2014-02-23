@@ -25,19 +25,31 @@ __kernel void updateParticle(__global Particle* particles ,   //0
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
+	float2 currentPos = posBuffer[id];
+	float2 newPos = currentPos + p->vel;
+	
+	if(newPos.x > dimensions.x || newPos.x < 0) {
+		newPos.x = currentPos.x - p->vel.x;
+		p->vel.x *= -1.0f;
+	}
 
-	float2 diff = mousePos - posBuffer[id];
-	float invDistSQ = 1.0f / dot(diff, diff);
-	diff *= MOUSE_FORCE * invDistSQ;
-
-	p->vel += (dimensions * 0.5f - posBuffer[id]) * CENTER_FORCE * p->mass * p->mass;
-
-	float speed2 = dot(p->vel, p->vel);
-	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
-
-	posBuffer[id] += p->vel;
-	p->vel *= DAMP;
-	posBuffer[id] = posBuffer[id] + p->vel;
+	if(newPos.y > dimensions.y || newPos.y < 0) {
+		newPos.y = currentPos.y- p->vel.y;
+		p->vel.y *= -1.0f;
+	}
+	
+//	float2 diff = mousePos - posBuffer[id];
+//	float invDistSQ = 1.0f / dot(diff, diff);
+//	diff *= MOUSE_FORCE * invDistSQ;
+//
+//	p->vel += (dimensions * 0.5f - posBuffer[id]) * CENTER_FORCE * p->mass * p->mass;
+//
+//	float speed2 = dot(p->vel, p->vel);
+//	if(speed2<MIN_SPEED) posBuffer[id] = mousePos + diff * (1.0f + p->mass);
+//
+//	posBuffer[id] += p->vel;
+//	p->vel *= DAMP;
+	posBuffer[id] = newPos;
 	colBuffer[id] = color;
 }
 

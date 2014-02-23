@@ -2,7 +2,7 @@
 #include "clParticles.h"
 //----------------------
 
-#define MAX_NUM_PARTICLES ( 512 * 512 )
+#define MAX_NUM_PARTICLES ( 512 * 256 )
 
 using namespace std;
 
@@ -12,6 +12,8 @@ using namespace std;
 #define kArg_color       3
 #define kArg_mousePos    4
 #define kArg_dimensions  5
+
+#define FBO_CLEAR ofClear(255, 255, 255, 0)
 
 //------------------------------------------------------------------------------
 //																		  GLOBAL
@@ -44,13 +46,18 @@ float fadeSpeed;
 float blurAmount;
 float radius;
 
-string textureName = "images/star.png";
-
 ofImage particuleTex;
 
-ofFbo fboBlur;
-ofFbo fboPrev;
-ofFbo fboParticles;
+#ifdef FBOS
+	ofFbo fboBlur;
+	ofFbo fboPrev;
+	ofFbo fboParticles;
+#endif
+
+#ifdef TEXTURES
+	string textureName = "images/glitter.png";
+#endif
+
 ofShader shader;
 
 ofxUICanvas *gui;
@@ -129,7 +136,10 @@ void clParticles::setupOpenCL() {
 	}
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	// Load Program:
-	opencl.loadProgramFromFile("kernels/lorenz.cl");
+	if(!opencl.loadProgramFromFile("kernels/lorenz.cl")) {
+		std::cout << "OpenCL kernel couldn't be loaded" << std::endl;
+		exit();
+	}
 	
 	// Load the kernel:
 	clKernel = opencl.loadKernel("updateParticle");
@@ -148,13 +158,29 @@ void clParticles::setupOpenCL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
+#ifdef FBOS
+	// Allocating FBOs:
 	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
-	
-	if(shader.load("shaders/shader")) {
-		std:cout << "Shader loaded" << std::endl;
+
+	// Clearing FBOs:
+	fboParticles.begin();
+	{
+		FBO_CLEAR;
 	}
-	glPointSize(pointSize);
+	fboParticles.end();
+	
+	fboBlur.begin();
+	{
+		FBO_CLEAR;
+	}
+	fboBlur.end();
+#endif
+	// Loading shaders:
+	if(!shader.load("shaders/shader")) {
+		std:cout << "Shader Can't be loaded" << std::endl;
+		exit();
+	}
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -182,41 +208,7 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-	drawParticles();
-//	fboParticles.begin();
-//	{
-//		ofClear(255, 255, 255);
-//		drawParticles();
-//	}
-//	fboParticles.end();
-//	fboParticles.draw(0, 0);
-//	fboPrev.begin();
-//	{
-//		glEnable(GL_BLEND);
-//		glBlendFunc(GL_ONE, GL_ONE);
-//		float color = 1.0f - fadeSpeed;
-//		
-//		glColor4f(color, color, color, 1.0f);
-//		fboBlur.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-//		
-//		glColor3f(1.0f, 1.0f, 1.0f);
-//		fboNew.draw(0, 0, fboPrev.getWidth(), fboPrev.getHeight());
-//	}
-//	fboPrev.end();
-	
-//	fboBlur.begin();
-//	{
-//		ofClear(255, 255, 255);
-//		shaderBlurX.begin();
-//		{
-//			ofClear(0, 0, 0);
-//			shaderBlurX.setUniform1f("amountX", blurAmount);
-//		}
-//		shaderBlurX.end();
-//		fboParticles.draw(0, 0);
-//	}
-//	fboBlur.end();
-//	fboParticles.draw(0, 0);
+
 }
 
 //------------------------------------------------------------------------------
@@ -224,50 +216,65 @@ void clParticles::drawParticles() {
 	glPushAttrib(GL_ENABLE_BIT);
 	{
 		opencl.flush(); // block previously queued OpenCL commands.
-		
-		glColor4f(color.x, color.y, color.z, color.w);
+
 		glEnable(GL_POINT_SPRITE);
 		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 		glEnable(GL_POINT_SMOOTH);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_BLEND_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glPointSize(pointSize);
-
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
 		shader.begin();
 		{
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
-			glVertexPointer(2, GL_FLOAT, 0, NULL);
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[1]);
-			glColorPointer(4, GL_FLOAT, 0, NULL);
+#ifdef TEXTURES
+			particuleTex.getTextureReference().bind();
 			{
-				particuleTex.getTextureReference().bind();
+#endif
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glEnableClientState(GL_COLOR_ARRAY);
 				{
-					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
+					// Bind Buffers:
+					glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
+					glVertexPointer(2, GL_FLOAT, 0, NULL);
+					glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[1]);
+					glColorPointer(4, GL_FLOAT, 0, NULL);
+					{
+						// Draw buffers:
+						glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
+					}
+					glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 				}
-				particuleTex.getTextureReference().unbind();
+				glDisableClientState(GL_COLOR_ARRAY);
+				glDisableClientState(GL_VERTEX_ARRAY);
+#ifdef TEXTURES
 			}
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
+			particuleTex.getTextureReference().unbind();
+#endif
 		}
 		shader.end();
-		glDisableClientState(GL_COLOR_ARRAY);
 	}
 	glPopAttrib();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
-	glColor3f(0.0f, 0.0f, 0.0f);
-	string info = "fps: " + ofToString(ofGetFrameRate()) +
-				  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
-				  "\nPointSize: " + ofToString(pointSize);
-	ofDrawBitmapString(info, 20, 20);
+	glPushMatrix();
+	{
+		glColor3f(0.0f, 0.0f, 0.0f);
+		string info = "fps: " + ofToString(ofGetFrameRate()) +
+					  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
+				      "\nPointSize: " + ofToString(pointSize);
+		ofDrawBitmapString(info, 20, 20);
+	}
+	glPopMatrix();
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawGUI() {
-	gui->draw();
+	glPushMatrix();
+	{
+		gui->draw();
+	}
+	glPopMatrix();
 }
 
 //------------------------------------------------------------------------------
@@ -294,7 +301,10 @@ void clParticles::setup() {
 	setupOpenGL();
 	
 	ofDisableArbTex();
+	
+#ifdef TEXTURES
 	particuleTex.loadImage(textureName);
+#endif
 }
 //------------------------------------------------------------------------------
 
@@ -328,7 +338,10 @@ void clParticles::update() {
 //------------------------------------------------------------------------------
 
 void clParticles::draw() {
+	drawParticles();
+#ifdef FBOS
 	drawFBOs();
+#endif
 	drawInfos();
 	drawGUI();
 }
@@ -339,6 +352,7 @@ void clParticles::draw() {
 void clParticles::exit() {
 	gui->saveSettings("UISetting.xml");
 	delete gui;
+	
 }
 
 //------------------------------------------------------------------------------
