@@ -217,6 +217,7 @@
 		A8896AC3BECAAA504E3828F4 /* ofxUIEventArgs.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxUIEventArgs.cpp; path = ../../../addons/ofxUI/src/ofxUIEventArgs.cpp; sourceTree = SOURCE_ROOT; };
 		A8DB9FA418B9E5CC00BD507A /* glitter.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = glitter.png; path = images/glitter.png; sourceTree = "<group>"; };
 		A8DB9FA518B9E5CC00BD507A /* spark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = spark.png; path = images/spark.png; sourceTree = "<group>"; };
+		A8DB9FA618B9F4EE00BD507A /* star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = star.png; path = images/star.png; sourceTree = "<group>"; };
 		AEFCF7E549ACA862C022AD40 /* ofxUIDefines.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUIDefines.h; path = ../../../addons/ofxUI/src/ofxUIDefines.h; sourceTree = SOURCE_ROOT; };
 		B3CA0202B1A3B6D8920C2B15 /* ofxUIButton.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxUIButton.h; path = ../../../addons/ofxUI/src/ofxUIButton.h; sourceTree = SOURCE_ROOT; };
 		B4EBE6922DE4DCB97639B65F /* ofxMSATimer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxMSATimer.cpp; path = ../../../addons/ofxMSATimer/src/ofxMSATimer.cpp; sourceTree = SOURCE_ROOT; };
@@ -434,6 +435,7 @@
 		A8DB9FA318B9E58500BD507A /* images */ = {
 			isa = PBXGroup;
 			children = (
+				A8DB9FA618B9F4EE00BD507A /* star.png */,
 				A8DB9FA418B9E5CC00BD507A /* glitter.png */,
 				A8DB9FA518B9E5CC00BD507A /* spark.png */,
 			);

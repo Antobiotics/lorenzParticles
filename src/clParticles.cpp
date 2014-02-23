@@ -22,9 +22,9 @@ msa::OpenCL opencl;
 Particle particles[MAX_NUM_PARTICLES];
 msa::OpenCLBuffer clMemParticles; // Stores particles.
 float2 positionBuffer[MAX_NUM_PARTICLES];
-msa::OpenCLBuffer clMemPosVBO; // Stores particlesPos.
+msa::OpenCLBuffer clMemPosVBO;    // Stores particlesPos.
 float4 colorBuffer[MAX_NUM_PARTICLES];
-msa::OpenCLBuffer clMemColVBO;
+msa::OpenCLBuffer clMemColVBO;    // Stores colors.
 msa::OpenCLKernel *clKernel;
 
 GLuint vbo[2];
@@ -39,11 +39,12 @@ float dTime;
 
 unsigned int numParticles;
 unsigned int pointSize;
+bool  bDoVSync;
 float fadeSpeed;
 float blurAmount;
 float radius;
 
-string textureName = "images/glitter.png";
+string textureName = "images/star.png";
 
 ofImage particuleTex;
 
@@ -63,7 +64,7 @@ ofxUICanvas *gui;
 void clParticles::setupWindow() {
 	ofBackground(backgroundColor);
 	ofSetLogLevel(OF_LOG_VERBOSE);
-	ofSetVerticalSync(false);
+	ofSetVerticalSync(true);
 }
 
 //------------------------------------------------------------------------------
@@ -99,6 +100,9 @@ void clParticles::setupParameters() {
 	// Dimensions:
 	pointSize = 1;
 	radius = 200;
+	
+	// Window:
+	bDoVSync = true;
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -147,10 +151,10 @@ void clParticles::setupOpenGL() {
 	fboParticles.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	fboBlur.allocate(ofGetWidth(), ofGetHeight(), GL_RGBA);
 	
-	if(shader.load("shaders/blur2")) {
+	if(shader.load("shaders/shader")) {
 		std:cout << "Shader loaded" << std::endl;
 	}
-	glPointSize(2);
+	glPointSize(pointSize);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
@@ -178,13 +182,13 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::drawFBOs() {
-//	drawParticles();
-	fboParticles.begin();
-	{
-		ofClear(255, 255, 255);
-		drawParticles();
-	}
-	fboParticles.end();
+	drawParticles();
+//	fboParticles.begin();
+//	{
+//		ofClear(255, 255, 255);
+//		drawParticles();
+//	}
+//	fboParticles.end();
 //	fboParticles.draw(0, 0);
 //	fboPrev.begin();
 //	{
@@ -200,29 +204,28 @@ void clParticles::drawFBOs() {
 //	}
 //	fboPrev.end();
 	
-	fboBlur.begin();
-	{
-		ofClear(255, 255, 255);
+//	fboBlur.begin();
+//	{
+//		ofClear(255, 255, 255);
 //		shaderBlurX.begin();
 //		{
 //			ofClear(0, 0, 0);
-//			shaderBlurX.setUniform1f("blurAmnt", blurAmount);
+//			shaderBlurX.setUniform1f("amountX", blurAmount);
 //		}
 //		shaderBlurX.end();
-		fboParticles.draw(0, 0);
-	}
-	fboBlur.end();
-	fboBlur.draw(0, 0);
+//		fboParticles.draw(0, 0);
+//	}
+//	fboBlur.end();
+//	fboParticles.draw(0, 0);
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawParticles() {
 	glPushAttrib(GL_ENABLE_BIT);
 	{
+		opencl.flush(); // block previously queued OpenCL commands.
+		
 		glColor4f(color.x, color.y, color.z, color.w);
-		opencl.finish(); // block previously queued OpenCL commands.
-
-		glColor3f(0.0f, 0.0f, 0.0f);
 		glEnable(GL_POINT_SPRITE);
 		glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
 		glEnable(GL_POINT_SMOOTH);
@@ -234,19 +237,16 @@ void clParticles::drawParticles() {
 		glEnableClientState(GL_COLOR_ARRAY);
 		shader.begin();
 		{
-			shader.setUniform1f("amountX", 1 / ofGetWidth() * blurAmount);
-			shader.setUniform1f("amountY", 1 / ofGetHeight() * blurAmount);
-			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[0]);
 			glVertexPointer(2, GL_FLOAT, 0, NULL);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo[1]);
 			glColorPointer(4, GL_FLOAT, 0, NULL);
 			{
-//				particuleTex.getTextureReference().bind();
+				particuleTex.getTextureReference().bind();
 				{
 					glDrawArrays(GL_POINTS, 0, MAX_NUM_PARTICLES);
 				}
-//				particuleTex.getTextureReference().unbind();
+				particuleTex.getTextureReference().unbind();
 			}
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, NULL);
 		}
@@ -280,7 +280,7 @@ void clParticles::setup() {
 	
 	// Initialise the window:
 	setupWindow();
-
+		
 	// Initialise the GUI components:
 	setupGUI();
 	
@@ -369,6 +369,9 @@ void clParticles::keyPressed(int key) {
 	}
 	if(key == OF_KEY_DOWN) {
 		numParticles << 2;
+	}
+	if(key == 'v') {
+		bDoVSync = !bDoVSync;
 	}
 }
 
