@@ -184,8 +184,8 @@ void clParticles::setupOpenGL() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
-    float initPosX = ofRandom(0, ofGetWidth());
-    float initPosY = ofRandom(0, ofGetHeight());
+    float initPosX = ofGetWidth() / 2 + radius * cos(particles[i].u);
+    float initPosY = ofGetHeight() / 2 + radius * sin(particles[i].u);
 	positionBuffer[i].set(initPosX, initPosY);
 }
 
@@ -195,6 +195,7 @@ void clParticles::setupParticles() {
 		Particle &p = particles[i];
 		p.vel.set(0, 0);
 		p.mass = ofRandom(0.5, 1);
+		p.u = ofRandom(0, TWO_PI);
 		setupPosition(i);
 	}
 }

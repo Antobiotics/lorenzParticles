@@ -5,6 +5,7 @@
 typedef struct{
 	float2 vel;
 	float mass;
+	float u;
 } Particle;
 
 //------------------------------------------------------------------------------

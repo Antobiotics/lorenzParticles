@@ -14,6 +14,7 @@
 typedef struct{
 	float2 vel;
 	float mass;
+	float u;
 } Particle;
 
 __kernel void updateParticle(__global Particle* particles ,   //0
