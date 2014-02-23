@@ -43,7 +43,7 @@ float fadeSpeed;
 float blurAmount;
 float radius;
 
-string textureName = "glitter.png";
+string textureName = "images/glitter.png";
 
 ofImage particuleTex;
 
