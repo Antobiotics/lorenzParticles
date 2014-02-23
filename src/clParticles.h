@@ -4,6 +4,7 @@
 #include "ofMain.h"
 #include "ofxUI.h"
 #include "MSAOpenCL.h"
+#include "ofxMSAfft.h"
 #include "particle.h"
 //--------------------
 
@@ -30,6 +31,7 @@ public:
 	
 private:
 	void setupParameters();
+	void setupFFT();
 	void setupWindow();
 	void setupGUI();
 	void setupOpenCL();

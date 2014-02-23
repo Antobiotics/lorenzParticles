@@ -46,8 +46,6 @@ float fadeSpeed;
 float blurAmount;
 float radius;
 
-ofImage particuleTex;
-
 #ifdef FBOS
 	ofFbo fboBlur;
 	ofFbo fboPrev;
@@ -58,10 +56,15 @@ ofImage particuleTex;
 	string textureName = "images/glitter.png";
 #endif
 
+// Shaders:
 ofShader shader;
+ofImage particuleTex;
 
+// GUI:
 ofxUICanvas *gui;
 
+// FFT:
+ofxMSAfft fft;
 //------------------------------------------------------------------------------
 //																		   SETUP
 //																	   FUNCTIONS
@@ -110,6 +113,10 @@ void clParticles::setupParameters() {
 	
 	// Window:
 	bDoVSync = true;
+}
+//------------------------------------------------------------------------------
+void clParticles::setupFFT() {
+	fft.setup(44100, 1024);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -286,6 +293,9 @@ void clParticles::setup() {
 	// Initialise Parameters and global variables:
 	setupParameters();
 	
+	// Setup FFT:
+	setupFFT();
+	
 	// Initialise the window:
 	setupWindow();
 		
@@ -310,6 +320,9 @@ void clParticles::setup() {
 //------------------------------------------------------------------------------
 
 void clParticles::update() {
+	// FFT update:
+	fft.update();
+	
 	// Update Arguments:
     mousePos.x   = ofGetMouseX();
 	mousePos.y   = ofGetMouseY();
@@ -343,6 +356,7 @@ void clParticles::draw() {
 #ifdef FBOS
 	drawFBOs();
 #endif
+	fft.draw(0, 0);
 	drawInfos();
 	drawGUI();
 }
