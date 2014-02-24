@@ -15,7 +15,7 @@ typedef struct{
 //------------------------------------------------------------------------------
 typedef struct {
 	float2 pos;
-	float spread;
+	float frequency;
 	float attractForce;
 } Node;
 
@@ -110,7 +110,8 @@ __kernel void updateParticle(__global Particle* particles     ,
 			posBuffer[id] = nodes[birthNodeId].pos;
 			float a = rand(p->vel) * 3.1415926f * 30.0f;
 			float r = rand(currentPos);
-			p->vel = make_float2(cos(a), sin(a)) * (nodes[birthNodeId].spread * r * r * r);
+//			p->vel = make_float2(cos(a), sin(a)) * (nodes[birthNodeId].spread * r * r * r);
+			p->vel = make_float2(cos(a), sin(a)) * (r * r * r);
 //			p->life = 1.0f;
 //			//		p->mass = mix(massMin, 1.0f, r);
 		} else {

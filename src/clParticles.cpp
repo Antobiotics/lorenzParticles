@@ -20,7 +20,7 @@
 #define kArg_numNodes     11
 
 #define kModeAudioReact 0
-#define kModePerlin 1
+#define kModeExplode 1
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
@@ -249,7 +249,22 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::updateNodes() {
-	
+	int size = (fft.bufferSize>>1) - 1;
+	float freqMax = 0;
+	int indexMax = 0;
+	for (int i = 0; i < size; i++){
+		if(fft.freq[i] > freqMax) {
+			indexMax = i;
+			freqMax = fft.freq[i];
+		}
+	}
+//	std::cout << fft.freq[indexMax]
+//			  << " "
+//			  << indexMax
+//			  << " "
+//			  << indexMax * fft.FFTanalyzer.averageFrequencyIncrement
+//			  << std::endl;
+//	std::cout << "-----------" << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -342,9 +357,6 @@ void clParticles::drawInfos() {
 }
 //------------------------------------------------------------------------------
 void clParticles::drawFFT() {
-//	ofSetColor(255, 0, 0);
-//	ofCircle(ofGetWidth()/2, ofGetHeight() /2, fft.avgPower * 100);
-//	std::cout << fft.avgPower << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -354,7 +366,6 @@ void clParticles::drawNodes() {
 		glColor4f(color.x * fft.avgPower,
 				  color.y * fft.avgPower,
 				  color.z * fft.avgPower, 0.5f);
-//		ofSetRectMode(OF_RECTMODE_CENTER);
 		for(int i = 0; i < MAX_NUM_NODES; i++) {
 			particuleTex.draw(nodes[i].pos.x, nodes[i].pos.y, radius, radius);
 		}
@@ -408,7 +419,17 @@ void clParticles::setup() {
 void clParticles::update() {
 	// FFT update:
 	fft.update();
-	
+	if( abs(fft.avgPower - prevAvgPower) > 0.96f && currentMode == kModeAudioReact) {
+		currentMode = kModeExplode;
+		currentTime = 0;
+	}
+	if(currentMode == kModeExplode) {
+		std::cout << "kmodeExplode" << std::endl;
+		if(currentTime > 0.5) {
+			currentMode = kModeAudioReact;
+			std::cout << "back to audio react" << std::endl;
+		}
+	}
 	// Nodes update:
 	updateNodes();
 	
@@ -484,7 +505,7 @@ void clParticles::keyPressed(int key) {
 		currentMode = kModeAudioReact;
 	}
 	if(key == '2') {
-		currentMode = kModePerlin;
+		currentMode = kModeExplode;
 	}
 }
 

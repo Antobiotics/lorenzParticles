@@ -15,7 +15,7 @@ typedef struct{
 //------------------------------------------------------------------------------
 typedef struct {
 	float2 pos;
-	float spread;
+	float frequency;
 	float attractForce;
 } Node;
 
