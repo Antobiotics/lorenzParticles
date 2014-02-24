@@ -46,6 +46,9 @@ private:
 	void drawGUI();
 	void drawFBOs();
 	void drawFFT();
+	
+	void updateNodes();
+	void updateOpenCL();
 };
 
 //------------------------------------------------------------------------------

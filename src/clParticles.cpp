@@ -69,9 +69,8 @@ float2 initPos;
 	ofFbo fboParticles;
 #endif
 
-#ifdef TEXTURES
-	string textureName = "images/glitter.png";
-#endif
+string textureName = "images/glitter.png";
+
 
 // Shaders:
 ofShader shader;
@@ -249,6 +248,32 @@ void clParticles::setupParticles() {
 //																		  UPDATE
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
+void clParticles::updateNodes() {
+	
+}
+
+//------------------------------------------------------------------------------
+void clParticles::updateOpenCL() {
+	// Set Kernel Arguments:
+	clKernel->setArg(kArg_mode, currentMode);
+	clKernel->setArg(kArg_mousePos, mousePos);
+	clKernel->setArg(kArg_dimensions, dimensions);
+	clKernel->setArg(kArg_color, color);
+	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
+	clKernel->setArg(kArg_fftPower, fft.avgPower);
+	clKernel->setArg(kArg_numNodes, numNodes);
+	
+    // Update the OpenCL kernel:
+    clEnqueueAcquireGLObjects(opencl.getQueue(),
+                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
+	clEnqueueAcquireGLObjects(opencl.getQueue(),
+                              1, &clMemColVBO.getCLMem(), 0, 0, 0);
+	clKernel->run1D(MAX_NUM_PARTICLES);
+	clEnqueueReleaseGLObjects(opencl.getQueue(),
+                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
+	clEnqueueReleaseGLObjects(opencl.getQueue(),
+                              1, &clMemColVBO.getCLMem(), 0, 0, 0);
+}
 
 //------------------------------------------------------------------------------
 //  																		DRAW
@@ -326,10 +351,12 @@ void clParticles::drawFFT() {
 void clParticles::drawNodes() {
 	ofPushMatrix();
 	{
-		ofFill();
-		ofSetColor(0, 255, 0);
+		glColor4f(color.x * fft.avgPower,
+				  color.y * fft.avgPower,
+				  color.z * fft.avgPower, 0.5f);
+//		ofSetRectMode(OF_RECTMODE_CENTER);
 		for(int i = 0; i < MAX_NUM_NODES; i++) {
-			ofCircle(nodes[i].pos.x, nodes[i].pos.y, 10);
+			particuleTex.draw(nodes[i].pos.x, nodes[i].pos.y, radius, radius);
 		}
 	}
 	ofPopMatrix();
@@ -374,9 +401,7 @@ void clParticles::setup() {
 	
 	ofDisableArbTex();
 	
-#ifdef TEXTURES
 	particuleTex.loadImage(textureName);
-#endif
 }
 //------------------------------------------------------------------------------
 
@@ -384,32 +409,18 @@ void clParticles::update() {
 	// FFT update:
 	fft.update();
 	
+	// Nodes update:
+	updateNodes();
+	
 	// Update Arguments:
     mousePos.x   = ofGetMouseX();
 	mousePos.y   = ofGetMouseY();
 	dimensions.x = ofGetWidth ();
 	dimensions.y = ofGetHeight();
 	
-	// Set Kernel Arguments:
-	clKernel->setArg(kArg_mode, currentMode);
-	clKernel->setArg(kArg_mousePos, mousePos);
-	clKernel->setArg(kArg_dimensions, dimensions);
-	clKernel->setArg(kArg_color, color);
-	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
-	clKernel->setArg(kArg_fftPower, fft.avgPower);
-	clKernel->setArg(kArg_numNodes, numNodes);
-
-    // Update the OpenCL kernel:
-    clEnqueueAcquireGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
-	clEnqueueAcquireGLObjects(opencl.getQueue(),
-                              1, &clMemColVBO.getCLMem(), 0, 0, 0);
-	clKernel->run1D(MAX_NUM_PARTICLES);
-	clEnqueueReleaseGLObjects(opencl.getQueue(),
-                              1, &clMemPosVBO.getCLMem(), 0, 0, 0);
-	clEnqueueReleaseGLObjects(opencl.getQueue(),
-                              1, &clMemColVBO.getCLMem(), 0, 0, 0);
-
+	// Update OpenCL:
+	updateOpenCL();
+	
     // Update Global Variables:
     currentTime += dTime;
 	prevAvgPower = fft.avgPower;
