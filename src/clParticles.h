@@ -41,6 +41,7 @@ private:
 	void setupNodes();
 	
 	void drawParticles();
+	void drawNodes();
 	void drawInfos();
 	void drawGUI();
 	void drawFBOs();

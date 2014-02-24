@@ -4,21 +4,27 @@
 
 #define MAX_NUM_PARTICLES ( 1024 * 512 )
 #define MAX_NUM_NODES 8
-using namespace std;
+
 
 #define kArg_particles    0
 #define kArg_nodes        1
 #define kArg_posBuffer    2
 #define kArg_colBuffer    3
-#define kArg_origin       4
-#define kArg_color        5
-#define kArg_mousePos     6
-#define kArg_dimensions   7
-#define kArg_prevAvgPower 8
-#define kArg_fftPower     9
+#define kArg_mode 		  4
+#define kArg_origin       5
+#define kArg_color        6
+#define kArg_mousePos     7
+#define kArg_dimensions   8
+#define kArg_prevAvgPower 9
+#define kArg_fftPower     10
+#define kArg_numNodes     11
+
+#define kModeAudioReact 0
+#define kModePerlin 1
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
+using namespace std;
 //------------------------------------------------------------------------------
 //																		  GLOBAL
 //																	   VARIABLES
@@ -46,6 +52,8 @@ float2 dimensions;
 float currentTime;
 float dTime;
 
+unsigned int currentMode;
+unsigned int numNodes;
 unsigned int numParticles;
 unsigned int pointSize;
 bool  bDoVSync;
@@ -114,7 +122,7 @@ void clParticles::setupParameters() {
 	
 	// Kernel Parameters:
 	prevAvgPower = 0.1;
-	
+	numNodes = MAX_NUM_NODES;
 	// Time variables:
 	currentTime = 0;
 	dTime = 0.01;
@@ -125,10 +133,13 @@ void clParticles::setupParameters() {
 	
 	// Window:
 	bDoVSync = true;
+	
+	// Modes:
+	currentMode = kModeAudioReact;
 }
 //------------------------------------------------------------------------------
 void clParticles::setupFFT() {
-	fft.setup(44100, 2048, 0, 1, 4, 1024);
+	fft.setup(44100, 1024, 0, 1, 2, 512);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -169,6 +180,7 @@ void clParticles::setupOpenCL() {
 	clMemColVBO.initFromGLObject(vbo[1]);
 
 	// Bind variables to the kernel
+	clKernel->setArg(kArg_mode, currentMode);
 	clKernel->setArg(kArg_particles, clMemParticles.getCLMem());
 	clKernel->setArg(kArg_nodes, clMemNodes.getCLMem());
 	clKernel->setArg(kArg_posBuffer, clMemPosVBO.getCLMem());
@@ -179,6 +191,7 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
 	clKernel->setArg(kArg_fftPower, fft.avgPower);
+	clKernel->setArg(kArg_numNodes, numNodes);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
@@ -217,7 +230,8 @@ void clParticles::setupPosition(int i) {
 void clParticles::setupNodes() {
 	for (int i = 0; i < MAX_NUM_NODES; i++) {
 		Node &node = nodes[i];
-		node.pos.set(ofRandom(0, ofGetWidth()), ofRandom(0, ofGetHeight()));
+		node.pos.x = ofRandom(0, ofGetWidth());
+		node.pos.y = ofRandom(0, ofGetHeight());
 		node.attractForce = ofRandomf();
 	}
 }
@@ -307,6 +321,19 @@ void clParticles::drawFFT() {
 //	ofCircle(ofGetWidth()/2, ofGetHeight() /2, fft.avgPower * 100);
 //	std::cout << fft.avgPower << std::endl;
 }
+
+//------------------------------------------------------------------------------
+void clParticles::drawNodes() {
+	ofPushMatrix();
+	{
+		ofFill();
+		ofSetColor(0, 255, 0);
+		for(int i = 0; i < MAX_NUM_NODES; i++) {
+			ofCircle(nodes[i].pos.x, nodes[i].pos.y, 10);
+		}
+	}
+	ofPopMatrix();
+}
 //------------------------------------------------------------------------------
 void clParticles::drawGUI() {
 	glPushMatrix();
@@ -332,6 +359,9 @@ void clParticles::setup() {
 		
 	// Initialise the GUI components:
 	setupGUI();
+	
+	// Initialise Nodes:
+	setupNodes();
 	
 	// Initialise Particle System:
 	setupParticles();
@@ -361,11 +391,13 @@ void clParticles::update() {
 	dimensions.y = ofGetHeight();
 	
 	// Set Kernel Arguments:
+	clKernel->setArg(kArg_mode, currentMode);
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
 	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
 	clKernel->setArg(kArg_fftPower, fft.avgPower);
+	clKernel->setArg(kArg_numNodes, numNodes);
 
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
@@ -390,10 +422,10 @@ void clParticles::draw() {
 #ifdef FBOS
 	drawFBOs();
 #endif
-//	fft.draw(0, 0);
 	drawInfos();
 	drawGUI();
 	drawFFT();
+	drawNodes();
 }
 
 //------------------------------------------------------------------------------
@@ -436,6 +468,12 @@ void clParticles::keyPressed(int key) {
 	}
 	if(key == 'v') {
 		bDoVSync = !bDoVSync;
+	}
+	if(key == '1') {
+		currentMode = kModeAudioReact;
+	}
+	if(key == '2') {
+		currentMode = kModePerlin;
 	}
 }
 
