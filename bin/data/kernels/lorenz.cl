@@ -5,6 +5,24 @@
 #define MIN_SPEED		0.1f
 #define PI              3.1415926
 
+#define kArg_particles     0
+#define kArg_nodes         1
+#define kArg_posBuffer     2
+#define kArg_colBuffer     3
+#define kArg_mode 		   4
+#define kArg_origin        5
+#define kArg_color         6
+#define kArg_dimensions    7
+#define kArg_prevMagnitude 8
+#define kArg_currMagnitude 9
+#define kArg_kickValue     10
+#define kArg_snareValue    11
+#define kArg_hihatValue    12
+#define kArg_numNodes      13
+
+#define kMode_audioReact 0
+#define kMode_explode 1
+
 //------------------------------------------------------------------------------
 typedef struct{
 	float2 vel;
@@ -33,28 +51,31 @@ __kernel void updateParticle(__global Particle* particles     ,
 							    const unsigned int currentMode,
 							 	const float2    origin        ,
 								const float4    color         ,
-								const float2    mousePos      ,
 								const float2    dimensions    ,
-							 	const float     prevAvgPower  ,
-							 	const float     avgPower      ,
+							 	const float     prevMagnitude ,
+							 	const float     currMagnitude ,
+							 	const float     kickValue     ,
+							    const float     snareValue    ,
+							    const float     hihatValue    ,
 							 	const unsigned int numNodes   )
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
 	float2 currentPos = posBuffer[id];
-	if(currentMode == 0) {
+	
+	if(currentMode == kMode_audioReact) {
 		// Audio Reactive Mode:
 		float2 newPos;
 		float pAngle = p->u;
 
 		float AmpFactor = 40;
-		float fftPower = 0.1;
-		fftPower = prevAvgPower - avgPower * 0.9;
+		float magnitude = 0.1;
+		magnitude = prevMagnitude - currMagnitude * 0.9;
 
-		newPos.x = origin.x + (fftPower * AmpFactor * p->mass + 35) * cos(pAngle);
-		newPos.y = origin.y + (fftPower * AmpFactor * p->mass + 35) * sin(pAngle);
+		newPos.x = origin.x + (magnitude * AmpFactor * p->mass + 35) * cos(pAngle);
+		newPos.y = origin.y + (magnitude * AmpFactor * p->mass + 35) * sin(pAngle);
 		
-		p->vel += (newPos - currentPos) * fftPower * p->mass * p->mass;
+		p->vel += (newPos - currentPos) * magnitude * p->mass * p->mass;
 		
 		if(newPos.x > dimensions.x || newPos.x < 0) {
 			newPos.x = currentPos.x - p->vel.x;
@@ -71,9 +92,9 @@ __kernel void updateParticle(__global Particle* particles     ,
 		
 		// Colors:
 		float4 colorR = color;
-		colorR.y = fftPower * 1.5;
+		colorR.y = magnitude * 1.5;
 		colBuffer[id] = colorR * 0.95;
-	} else {
+	} else if (currentMode == kMode_explode) {
 		// Node attractors mode
 
 		int	birthNodeId	= id % numNodes;
@@ -88,38 +109,24 @@ __kernel void updateParticle(__global Particle* particles     ,
 		float2 normBetweenNodes	= fast_normalize(diffBetweenNodes);
 		float distBetweenNodes = fast_length(diffBetweenNodes);
 
-		float	dotTargetNode		= fmax(0.0f, dot(vecFromTargetNode, -normBetweenNodes));
-		float	dotBirthNode		= fmax(0.0f, dot(vecFromBirthNode, normBetweenNodes));
-		float	distRatio			= fmin(1.0f, fmin(dotTargetNode, dotBirthNode) / (distBetweenNodes * 0.5f));
+		float dotTargetNode = fmax(0.0f, dot(vecFromTargetNode, -normBetweenNodes));
+		float dotBirthNode = fmax(0.0f, dot(vecFromBirthNode, normBetweenNodes));
+		float distRatio = fmin(1.0f, fmin(dotTargetNode, dotBirthNode) / (distBetweenNodes * 0.5f));
 
 		// add attraction to other nodes
 		p->vel -= vecFromTargetNode * nodes[targetNodeId].attractForce / (distToTargetNode + 1.0f) * p->mass;
-		
-//		// add wave
-//		float2 waveVel = make_float2(-normBetweenNodes.y, normBetweenNodes.x) * sin(time + 10.0f * 3.1416926f * distRatio * nodes[birthNodeId].waveFreq);
-//		float2 sideways				= nodes[birthNodeId].waveAmp * waveVel * distRatio * p->mass;
-//		posBuffer[id]				+= sideways * wavePosMult;
-//		p->vel						+= sideways * waveVelMult * dotTargetNode / (distBetweenNodes + 1);
-//		
-		// set color
-//		float invLife = 1.0f - p->life;
-//		colBuffer[id] = color * (1.0f - invLife * invLife * invLife);// * sqrt(p->life);	// fade with life
-		
+	
 		// add waviness
 		if(distToTargetNode < 1.0f) {
 			posBuffer[id] = nodes[birthNodeId].pos;
 			float a = rand(p->vel) * 3.1415926f * 30.0f;
 			float r = rand(currentPos);
-//			p->vel = make_float2(cos(a), sin(a)) * (nodes[birthNodeId].spread * r * r * r);
 			p->vel = make_float2(cos(a), sin(a)) * (r * r * r);
-//			p->life = 1.0f;
-//			//		p->mass = mix(massMin, 1.0f, r);
 		} else {
 			posBuffer[id] = currentPos;
+			posBuffer[id] += p->vel;
 			colBuffer[id] = colBuffer[id] * 0.96;
 			
-			posBuffer[id] += p->vel;
-//			p->vel *= 0.22;
 		}
 	}
 }
@@ -127,4 +134,19 @@ __kernel void updateParticle(__global Particle* particles     ,
 //------------------------------------------------------------------------------
 
 
+//		// add wave
+//		float2 waveVel = make_float2(-normBetweenNodes.y, normBetweenNodes.x) * sin(time + 10.0f * 3.1416926f * distRatio * nodes[birthNodeId].waveFreq);
+//		float2 sideways				= nodes[birthNodeId].waveAmp * waveVel * distRatio * p->mass;
+//		posBuffer[id]				+= sideways * wavePosMult;
+//		p->vel						+= sideways * waveVelMult * dotTargetNode / (distBetweenNodes + 1);
+//
+// set color
+//		float invLife = 1.0f - p->life;
+//		colBuffer[id] = color * (1.0f - invLife * invLife * invLife);// * sqrt(p->life);	// fade with life
+
+
+//			p->vel = make_float2(cos(a), sin(a)) * (nodes[birthNodeId].spread * r * r * r);
+
+//			p->life = 1.0f;
+//			//		p->mass = mix(massMin, 1.0f, r);
 

@@ -2,27 +2,28 @@
 #include "clParticles.h"
 //----------------------
 
+#define FBO_CLEAR ofClear(255, 255, 255, 0)
+
 #define MAX_NUM_PARTICLES ( 1024 * 512 )
 #define MAX_NUM_NODES 8
 
+#define kArg_particles     0
+#define kArg_nodes         1
+#define kArg_posBuffer     2
+#define kArg_colBuffer     3
+#define kArg_mode 		   4
+#define kArg_origin        5
+#define kArg_color         6
+#define kArg_dimensions    7
+#define kArg_prevMagnitude 8
+#define kArg_currMagnitude 9
+#define kArg_kickValue     10
+#define kArg_snareValue    11
+#define kArg_hihatValue    12
+#define kArg_numNodes      13
 
-#define kArg_particles    0
-#define kArg_nodes        1
-#define kArg_posBuffer    2
-#define kArg_colBuffer    3
-#define kArg_mode 		  4
-#define kArg_origin       5
-#define kArg_color        6
-#define kArg_mousePos     7
-#define kArg_dimensions   8
-#define kArg_prevAvgPower 9
-#define kArg_fftPower     10
-#define kArg_numNodes     11
-
-#define kModeAudioReact 0
-#define kModeExplode 1
-
-#define FBO_CLEAR ofClear(255, 255, 255, 0)
+#define kMode_audioReact 0
+#define kMode_explode 1
 
 using namespace std;
 //------------------------------------------------------------------------------
@@ -60,10 +61,13 @@ unsigned int pointSize;
 bool  bDoVSync;
 float radius;
 
+float explosionThreshold;
+
 float kickValue, snareValue, hihatValue;
 float prevKickValue;
-float currentMagnitude;
-float previousMagnitude;
+float currMagnitude;
+float prevMagnitude;
+
 float2 initPos;
 
 #ifdef FBOS
@@ -74,7 +78,6 @@ float2 initPos;
 
 string textureName = "images/bhole.png";
 
-
 // Shaders:
 ofShader shader;
 ofImage particuleTex;
@@ -84,6 +87,7 @@ ofxUICanvas *gui;
 
 // Beat Tracker:
 ofxBeat beatTracker;
+
 //------------------------------------------------------------------------------
 //																		   SETUP
 //																	   FUNCTIONS
@@ -100,9 +104,10 @@ void clParticles::setupWindow() {
 void clParticles::setupGUI() {
 	gui = new ofxUICanvas();
 	gui->init(0, ofGetHeight()/8, ofGetWidth()/6, ofGetHeight());
-//	gui->addSlider("Blur Amount", 0, 50, blurAmount);
-//	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
-	
+#ifdef GUI
+	gui->addSlider("Blur Amount", 0, 50, blurAmount);
+	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
+#endif
 	ofAddListener(gui->newGUIEvent, this, &clParticles::guiEvent);
 	gui->autoSizeToFitWidgets();
 	gui->loadSettings("UISettings.xml");
@@ -116,11 +121,16 @@ void clParticles::setupParameters() {
 	color.z = 0.33f;
 	color.w = 1.0f;
 	
+	explosionThreshold = 0.5f;
+	
 	numParticles = MAX_NUM_PARTICLES;
 	
 	// Kernel Parameters:
 	prevKickValue = 0.1f;
-	previousMagnitude = 0.0f;
+	prevMagnitude = 0.1f;
+	kickValue = 0.0f;
+	snareValue = 0.0f;
+	hihatValue = 0.0f;
 	numNodes = MAX_NUM_NODES;
 	// Time variables:
 	currentTime = 0;
@@ -134,12 +144,14 @@ void clParticles::setupParameters() {
 	bDoVSync = true;
 	
 	// Modes:
-	currentMode = kModeAudioReact;
+	currentMode = kMode_audioReact;
 }
+
 //------------------------------------------------------------------------------
 void clParticles::setupBeatTracker() {
 	ofSoundStreamSetup(0, 1, this, 44100, beatTracker.getBufferSize(), 4);
 }
+
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
 	opencl.setupFromOpenGL();
@@ -186,12 +198,15 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_colBuffer, clMemColVBO.getCLMem());
 	clKernel->setArg(kArg_origin, initPos);
 	clKernel->setArg(kArg_color, color);
-	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
-	clKernel->setArg(kArg_prevAvgPower, prevKickValue);
-	clKernel->setArg(kArg_fftPower, kickValue);
+	clKernel->setArg(kArg_prevMagnitude, prevMagnitude);
+	clKernel->setArg(kArg_currMagnitude, currMagnitude);
+	clKernel->setArg(kArg_kickValue, kickValue);
+	clKernel->setArg(kArg_snareValue, snareValue);
+	clKernel->setArg(kArg_hihatValue, hihatValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
 }
+
 //------------------------------------------------------------------------------
 void clParticles::setupOpenGL() {
 #ifdef FBOS
@@ -218,6 +233,7 @@ void clParticles::setupOpenGL() {
 		exit();
 	}
 }
+
 //------------------------------------------------------------------------------
 void clParticles::setupPosition(int i) {
     initPos.x = ofGetWidth() / 2 + radius * cos(particles[i].u);
@@ -234,6 +250,7 @@ void clParticles::setupNodes() {
 		node.attractForce = ofRandomf();
 	}
 }
+
 //------------------------------------------------------------------------------
 void clParticles::setupParticles() {
 	for(int i = 0; i < MAX_NUM_PARTICLES; i++) {
@@ -244,9 +261,33 @@ void clParticles::setupParticles() {
 		setupPosition(i);
 	}
 }
+
 //------------------------------------------------------------------------------
 //																		  UPDATE
 //																	   FUNCTIONS
+//------------------------------------------------------------------------------
+void clParticles::updateBeatTracker() {
+	beatTracker.update(ofGetElapsedTimeMillis());
+	kickValue = beatTracker.kick();
+	snareValue = beatTracker.snare();
+	hihatValue = beatTracker.hihat();
+	currMagnitude = beatTracker.getMagnitude();
+	
+	std::cout << currMagnitude - prevMagnitude << std::endl;
+	
+	if( abs(currMagnitude - prevMagnitude) > explosionThreshold && currentMode == kMode_audioReact) {
+		currentMode = kMode_explode;
+		currentTime = 0;
+	}
+	if(currentMode == kMode_explode) {
+		std::cout << "kmodeExplode" << std::endl;
+		if(currentTime > 0.5) {
+			currentMode = kMode_audioReact;
+			std::cout << "back to audio react" << std::endl;
+		}
+	}
+}
+
 //------------------------------------------------------------------------------
 void clParticles::updateNodes() {
 
@@ -256,11 +297,13 @@ void clParticles::updateNodes() {
 void clParticles::updateOpenCL() {
 	// Set Kernel Arguments:
 	clKernel->setArg(kArg_mode, currentMode);
-	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
-	clKernel->setArg(kArg_prevAvgPower, prevKickValue);
-	clKernel->setArg(kArg_fftPower, kickValue);
+	clKernel->setArg(kArg_prevMagnitude, prevMagnitude);
+	clKernel->setArg(kArg_currMagnitude, currMagnitude);
+	clKernel->setArg(kArg_kickValue, kickValue);
+	clKernel->setArg(kArg_snareValue, snareValue);
+	clKernel->setArg(kArg_hihatValue, hihatValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
 	
     // Update the OpenCL kernel:
@@ -327,14 +370,13 @@ void clParticles::drawParticles() {
 	glPopAttrib();
 }
 
-
 //------------------------------------------------------------------------------
 void clParticles::drawInfos() {
 	glPushMatrix();
 	{
 		glColor3f(0.0f, 0.0f, 0.0f);
 		string info = "fps: " + ofToString(ofGetFrameRate()) +
-					  "\nnumber of particles: " + ofToString(MAX_NUM_PARTICLES) +
+					  "\nnumber of particles: " + ofToString(numParticles) +
 				      "\nPointSize: " + ofToString(pointSize);
 		ofDrawBitmapString(info, 20, 20);
 	}
@@ -343,9 +385,11 @@ void clParticles::drawInfos() {
 
 //------------------------------------------------------------------------------
 void clParticles::drawBeaTracker() {
-//	cout << kickValue  << ","
-//		 << snareValue << ","
-//	     << hihatValue << endl;
+#ifdef DEBUG
+	cout << kickValue  << ","
+		 << snareValue << ","
+	     << hihatValue << endl;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -407,29 +451,12 @@ void clParticles::setup() {
 
 void clParticles::update() {
 	// Beat Tracker update:
-	beatTracker.update(ofGetElapsedTimeMillis());
-	kickValue = beatTracker.kick();
-	snareValue = beatTracker.snare();
-	hihatValue = beatTracker.hihat();
-	currentMagnitude = beatTracker.getMagnitude();
-	std::cout << currentMagnitude - previousMagnitude << std::endl;
-	if( abs(currentMagnitude - previousMagnitude) > 0.98f && currentMode == kModeAudioReact) {
-		currentMode = kModeExplode;
-		currentTime = 0;
-	}
-	if(currentMode == kModeExplode) {
-		std::cout << "kmodeExplode" << std::endl;
-		if(currentTime > 0.5) {
-			currentMode = kModeAudioReact;
-			std::cout << "back to audio react" << std::endl;
-		}
-	}
+	updateBeatTracker();
+	
 	// Nodes update:
 	updateNodes();
 	
 	// Update Arguments:
-    mousePos.x   = ofGetMouseX();
-	mousePos.y   = ofGetMouseY();
 	dimensions.x = ofGetWidth ();
 	dimensions.y = ofGetHeight();
 	
@@ -439,7 +466,7 @@ void clParticles::update() {
     // Update Global Variables:
     currentTime += dTime;
 	prevKickValue = kickValue;
-	previousMagnitude = currentMagnitude;
+	prevMagnitude = currMagnitude;
 }
 
 //------------------------------------------------------------------------------
@@ -471,14 +498,16 @@ void clParticles::exit() {
 
 //------------------------------------------------------------------------------
 void clParticles::guiEvent(ofxUIEventArgs &e) {
-//	if(e.getName() == "Blur Amount") {
-//		ofxUISlider *slider = e.getSlider();
-//		blurAmount = slider->getScaledValue();
-//	}
-//	if(e.getName() == "Fade Speed") {
-//		ofxUISlider *slider = e.getSlider();
-//		fadeSpeed = slider->getScaledValue();
-//	}
+#ifdef GUI
+	if(e.getName() == "Blur Amount") {
+		ofxUISlider *slider = e.getSlider();
+		blurAmount = slider->getScaledValue();
+	}
+	if(e.getName() == "Fade Speed") {
+		ofxUISlider *slider = e.getSlider();
+		fadeSpeed = slider->getScaledValue();
+	}
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -502,10 +531,10 @@ void clParticles::keyPressed(int key) {
 		bDoVSync = !bDoVSync;
 	}
 	if(key == '1') {
-		currentMode = kModeAudioReact;
+		currentMode = kMode_audioReact;
 	}
 	if(key == '2') {
-		currentMode = kModeExplode;
+		currentMode = kMode_explode;
 	}
 }
 

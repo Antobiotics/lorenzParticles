@@ -50,9 +50,8 @@ private:
 	void drawBeaTracker();
 	
 	void updateNodes();
+	void updateBeatTracker();
 	void updateOpenCL();
-	
-	
 };
 
 //------------------------------------------------------------------------------
