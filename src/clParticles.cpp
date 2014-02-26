@@ -81,6 +81,7 @@ ofxUICanvas *gui;
 
 // FFT:
 ofxMSAfft fft;
+
 //------------------------------------------------------------------------------
 //																		   SETUP
 //																	   FUNCTIONS
@@ -138,7 +139,7 @@ void clParticles::setupParameters() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupFFT() {
-	fft.setup(44100, 1024, 0, 1, 2, 512);
+	fft.setup(44100, 2048, 0, 1, 2, 512);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -355,8 +356,10 @@ void clParticles::drawInfos() {
 	}
 	glPopMatrix();
 }
+
 //------------------------------------------------------------------------------
 void clParticles::drawFFT() {
+
 }
 
 //------------------------------------------------------------------------------
@@ -419,7 +422,8 @@ void clParticles::setup() {
 void clParticles::update() {
 	// FFT update:
 	fft.update();
-	if( abs(fft.avgPower - prevAvgPower) > 0.96f && currentMode == kModeAudioReact) {
+	std::cout << fft.avgPower << std::endl;
+	if( abs(fft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
 		currentMode = kModeExplode;
 		currentTime = 0;
 	}
