@@ -56,11 +56,13 @@ unsigned int currentMode;
 unsigned int numNodes;
 unsigned int numParticles;
 unsigned int pointSize;
+
 bool  bDoVSync;
-float fadeSpeed;
-float blurAmount;
 float radius;
-float prevAvgPower;
+
+float kickValue, snareValue, hihatValue;
+float prevKickValue;
+
 float2 initPos;
 
 #ifdef FBOS
@@ -79,9 +81,8 @@ ofImage particuleTex;
 // GUI:
 ofxUICanvas *gui;
 
-// FFT:
-ofxMSAfft theFft;
-
+// Beat Tracker:
+ofxBeat beatTracker;
 //------------------------------------------------------------------------------
 //																		   SETUP
 //																	   FUNCTIONS
@@ -98,8 +99,8 @@ void clParticles::setupWindow() {
 void clParticles::setupGUI() {
 	gui = new ofxUICanvas();
 	gui->init(0, ofGetHeight()/8, ofGetWidth()/6, ofGetHeight());
-	gui->addSlider("Blur Amount", 0, 50, blurAmount);
-	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
+//	gui->addSlider("Blur Amount", 0, 50, blurAmount);
+//	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
 	
 	ofAddListener(gui->newGUIEvent, this, &clParticles::guiEvent);
 	gui->autoSizeToFitWidgets();
@@ -116,12 +117,8 @@ void clParticles::setupParameters() {
 	
 	numParticles = MAX_NUM_PARTICLES;
 	
-	// Shader Parameters:
-	fadeSpeed = 0.25f;
-	blurAmount = 1;
-	
 	// Kernel Parameters:
-	prevAvgPower = 0.1;
+	prevKickValue = 0.1;
 	numNodes = MAX_NUM_NODES;
 	// Time variables:
 	currentTime = 0;
@@ -138,8 +135,8 @@ void clParticles::setupParameters() {
 	currentMode = kModeAudioReact;
 }
 //------------------------------------------------------------------------------
-void clParticles::setupFFT() {
-	theFft.setup(44100, 2048, 0, 1, 2, 512);
+void clParticles::setupBeatTracker() {
+	ofSoundStreamSetup(0, 1, this, 44100, beatTracker.getBufferSize(), 4);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -189,8 +186,8 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_color, color);
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
-	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
-	clKernel->setArg(kArg_fftPower, theFft.avgPower);
+	clKernel->setArg(kArg_prevAvgPower, prevKickValue);
+	clKernel->setArg(kArg_fftPower, kickValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
 }
 //------------------------------------------------------------------------------
@@ -250,22 +247,7 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::updateNodes() {
-	int size = (theFft.bufferSize>>1) - 1;
-	float freqMax = 0;
-	int indexMax = 0;
-	for (int i = 0; i < size; i++){
-		if(theFft.freq[i] > freqMax) {
-			indexMax = i;
-			freqMax = theFft.freq[i];
-		}
-	}
-//	std::cout << fft.freq[indexMax]
-//			  << " "
-//			  << indexMax
-//			  << " "
-//			  << indexMax * fft.FFTanalyzer.averageFrequencyIncrement
-//			  << std::endl;
-//	std::cout << "-----------" << std::endl;
+
 }
 
 //------------------------------------------------------------------------------
@@ -275,8 +257,8 @@ void clParticles::updateOpenCL() {
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
-	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
-	clKernel->setArg(kArg_fftPower, theFft.avgPower);
+	clKernel->setArg(kArg_prevAvgPower, prevKickValue);
+	clKernel->setArg(kArg_fftPower, kickValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
 	
     // Update the OpenCL kernel:
@@ -358,22 +340,22 @@ void clParticles::drawInfos() {
 }
 
 //------------------------------------------------------------------------------
-void clParticles::drawFFT() {
-
+void clParticles::drawBeaTracker() {
+	cout << kickValue  << ","
+		 << snareValue << ","
+	     << hihatValue << endl;
 }
 
 //------------------------------------------------------------------------------
 void clParticles::drawNodes() {
 	ofPushMatrix();
 	{
-		ofSetRectMode(OF_RECTMODE_CENTER);
-		glColor4f(color.x * theFft.avgPower,
-				  color.y * theFft.avgPower,
-				  color.z * theFft.avgPower, 0.5f);
+		glColor4f(color.x * kickValue,
+				  color.y * snareValue,
+				  color.z * hihatValue, 0.5f);
 		for(int i = 0; i < MAX_NUM_NODES; i++) {
 			particuleTex.draw(nodes[i].pos.x, nodes[i].pos.y, radius, radius);
 		}
-		ofSetRectMode(OF_RECTMODE_CORNER);
 	}
 	ofPopMatrix();
 }
@@ -394,8 +376,8 @@ void clParticles::setup() {
 	// Initialise Parameters and global variables:
 	setupParameters();
 	
-	// Setup FFT:
-	setupFFT();
+	// Setup Beat Tracker:
+	setupBeatTracker();
 	
 	// Initialise the window:
 	setupWindow();
@@ -422,20 +404,23 @@ void clParticles::setup() {
 //------------------------------------------------------------------------------
 
 void clParticles::update() {
-	// FFT update:
-	theFft.update();
-	std::cout << theFft.avgPower << std::endl;
-	if( abs(theFft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
-		currentMode = kModeExplode;
-		currentTime = 0;
-	}
-	if(currentMode == kModeExplode) {
-		std::cout << "kmodeExplode" << std::endl;
-		if(currentTime > 0.5) {
-			currentMode = kModeAudioReact;
-			std::cout << "back to audio react" << std::endl;
-		}
-	}
+	// Beat Tracker update:
+	beatTracker.update(ofGetElapsedTimeMillis());
+	kickValue = beatTracker.kick();
+	snareValue = beatTracker.snare();
+	hihatValue = beatTracker.hihat();
+//	std::cout << theFft.avgPower << std::endl;
+//	if( abs(theFft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
+//		currentMode = kModeExplode;
+//		currentTime = 0;
+//	}
+//	if(currentMode == kModeExplode) {
+//		std::cout << "kmodeExplode" << std::endl;
+//		if(currentTime > 0.5) {
+//			currentMode = kModeAudioReact;
+//			std::cout << "back to audio react" << std::endl;
+//		}
+//	}
 	// Nodes update:
 	updateNodes();
 	
@@ -450,7 +435,7 @@ void clParticles::update() {
 	
     // Update Global Variables:
     currentTime += dTime;
-	prevAvgPower = theFft.avgPower;
+	prevKickValue = kickValue;
 }
 
 //------------------------------------------------------------------------------
@@ -462,12 +447,17 @@ void clParticles::draw() {
 #endif
 	drawInfos();
 	drawGUI();
-	drawFFT();
+	drawBeaTracker();
 	drawNodes();
 }
 
 //------------------------------------------------------------------------------
 //																	      EVENTS
+//------------------------------------------------------------------------------
+void clParticles::audioReceived(float* input, int bufferSize, int nChannels) {
+	beatTracker.audioReceived(input, bufferSize, nChannels);
+}
+
 //------------------------------------------------------------------------------
 void clParticles::exit() {
 	gui->saveSettings("UISetting.xml");
@@ -477,14 +467,14 @@ void clParticles::exit() {
 
 //------------------------------------------------------------------------------
 void clParticles::guiEvent(ofxUIEventArgs &e) {
-	if(e.getName() == "Blur Amount") {
-		ofxUISlider *slider = e.getSlider();
-		blurAmount = slider->getScaledValue();
-	}
-	if(e.getName() == "Fade Speed") {
-		ofxUISlider *slider = e.getSlider();
-		fadeSpeed = slider->getScaledValue();
-	}
+//	if(e.getName() == "Blur Amount") {
+//		ofxUISlider *slider = e.getSlider();
+//		blurAmount = slider->getScaledValue();
+//	}
+//	if(e.getName() == "Fade Speed") {
+//		ofxUISlider *slider = e.getSlider();
+//		fadeSpeed = slider->getScaledValue();
+//	}
 }
 
 //------------------------------------------------------------------------------

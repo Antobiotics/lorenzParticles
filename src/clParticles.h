@@ -29,10 +29,11 @@ public:
 	
 	void exit();
 	void guiEvent(ofxUIEventArgs &e);
+	void audioReceived(float*, int, int);
 	
 private:
 	void setupParameters();
-	void setupFFT();
+	void setupBeatTracker();
 	void setupWindow();
 	void setupGUI();
 	void setupOpenCL();
@@ -46,7 +47,7 @@ private:
 	void drawInfos();
 	void drawGUI();
 	void drawFBOs();
-	void drawFFT();
+	void drawBeaTracker();
 	
 	void updateNodes();
 	void updateOpenCL();
