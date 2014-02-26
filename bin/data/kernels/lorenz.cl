@@ -5,20 +5,25 @@
 #define MIN_SPEED		0.1f
 #define PI              3.1415926
 
-#define kArg_particles     0
-#define kArg_nodes         1
-#define kArg_posBuffer     2
-#define kArg_colBuffer     3
-#define kArg_mode 		   4
-#define kArg_origin        5
-#define kArg_color         6
-#define kArg_dimensions    7
-#define kArg_prevMagnitude 8
-#define kArg_currMagnitude 9
-#define kArg_kickValue     10
-#define kArg_snareValue    11
-#define kArg_hihatValue    12
-#define kArg_numNodes      13
+#define kArg_particles        0
+#define kArg_nodes            1
+#define kArg_posBuffer        2
+#define kArg_colBuffer        3
+#define kArg_mode 		      4
+#define kArg_origin           5
+#define kArg_color            6
+#define kArg_dimensions       7
+#define kArg_prevMagnitude    8
+#define kArg_currMagnitude    9
+#define kArg_kickValue       10
+#define kArg_snareValue      11
+#define kArg_hihatValue      12
+#define kArg_numNodes        13
+#define kArg_magnitudeFactor 14
+#define kArg_ampFactor       15
+#define kArg_colorFactor     16
+
+
 
 #define kMode_audioReact 0
 #define kMode_explode 1
@@ -44,20 +49,23 @@ float rand(float2 co) {
 }
 
 //------------------------------------------------------------------------------
-__kernel void updateParticle(__global Particle* particles     ,
-							 __global Node*     nodes         ,
-							 __global float2*   posBuffer     ,
-							 __global float4*   colBuffer     ,
-							    const unsigned int currentMode,
-							 	const float2    origin        ,
-								const float4    color         ,
-								const float2    dimensions    ,
-							 	const float     prevMagnitude ,
-							 	const float     currMagnitude ,
-							 	const float     kickValue     ,
-							    const float     snareValue    ,
-							    const float     hihatValue    ,
-							 	const unsigned int numNodes   )
+__kernel void updateParticle(__global Particle* particles      ,
+							 __global Node*     nodes          ,
+							 __global float2*   posBuffer      ,
+							 __global float4*   colBuffer      ,
+							    const unsigned int currentMode ,
+							 	const float2    origin         ,
+								const float4    color          ,
+								const float2    dimensions     ,
+							 	const float     prevMagnitude  ,
+							 	const float     currMagnitude  ,
+							 	const float     kickValue      ,
+							    const float     snareValue     ,
+							    const float     hihatValue     ,
+							 	const unsigned int numNodes    ,
+							 	const float     magnitudeFactor,
+							    const float     ampFactor      ,
+							    const float     colorFactor)
 {
 	int id = get_global_id(0);
 	__global Particle *p = &particles[id];
@@ -68,12 +76,23 @@ __kernel void updateParticle(__global Particle* particles     ,
 		float2 newPos;
 		float pAngle = p->u;
 
-		float AmpFactor = 40;
 		float magnitude = 0.1;
-		magnitude = prevMagnitude - currMagnitude * 0.9;
-
-		newPos.x = origin.x + (magnitude * AmpFactor * p->mass + 35) * cos(pAngle);
-		newPos.y = origin.y + (magnitude * AmpFactor * p->mass + 35) * sin(pAngle);
+		
+		if(kickValue != 0) {
+			magnitude = kickValue;
+		} else {
+			magnitude = prevMagnitude - currMagnitude * magnitudeFactor;
+		}
+		float xFactor = 1.0f;
+		float yFactor = 1.0f;
+		if(snareValue != 0) {
+			xFactor = snareValue * 1.25;
+		}
+		if(hihatValue != 0) {
+			yFactor = hihatValue * 1.25;
+		}
+		newPos.x = origin.x + (magnitude * xFactor * ampFactor * p->mass + 35) * cos(pAngle);
+		newPos.y = origin.y + (magnitude * yFactor * ampFactor * p->mass + 35) * sin(pAngle);
 		
 		p->vel += (newPos - currentPos) * magnitude * p->mass * p->mass;
 		
@@ -91,9 +110,15 @@ __kernel void updateParticle(__global Particle* particles     ,
 		p->vel *= DAMP;
 		
 		// Colors:
+		float2 diffToOrigin = currentPos - origin;
+		float2 normFromOrigin = fast_normalize(diffToOrigin);
 		float4 colorR = color;
+//		colorR.x = normFromOrigin.x;
 		colorR.y = magnitude * 1.5;
+//		colorR.z = normFromOrigin.y;
 		colBuffer[id] = colorR * 0.95;
+		colBuffer[id] = colBuffer[id] * colorFactor;//0.88f
+		
 	} else if (currentMode == kMode_explode) {
 		// Node attractors mode
 
@@ -126,7 +151,6 @@ __kernel void updateParticle(__global Particle* particles     ,
 			posBuffer[id] = currentPos;
 			posBuffer[id] += p->vel;
 			colBuffer[id] = colBuffer[id] * 0.96;
-			
 		}
 	}
 }

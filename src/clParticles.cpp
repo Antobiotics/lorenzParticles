@@ -1,26 +1,30 @@
 //----------------------
 #include "clParticles.h"
 //----------------------
+#define GUI
 
 #define FBO_CLEAR ofClear(255, 255, 255, 0)
 
-#define MAX_NUM_PARTICLES ( 1024 * 512 )
+#define MAX_NUM_PARTICLES ( 1024 * 2048 )
 #define MAX_NUM_NODES 8
 
-#define kArg_particles     0
-#define kArg_nodes         1
-#define kArg_posBuffer     2
-#define kArg_colBuffer     3
-#define kArg_mode 		   4
-#define kArg_origin        5
-#define kArg_color         6
-#define kArg_dimensions    7
-#define kArg_prevMagnitude 8
-#define kArg_currMagnitude 9
-#define kArg_kickValue     10
-#define kArg_snareValue    11
-#define kArg_hihatValue    12
-#define kArg_numNodes      13
+#define kArg_particles        0
+#define kArg_nodes            1
+#define kArg_posBuffer        2
+#define kArg_colBuffer        3
+#define kArg_mode 		      4
+#define kArg_origin           5
+#define kArg_color            6
+#define kArg_dimensions       7
+#define kArg_prevMagnitude    8
+#define kArg_currMagnitude    9
+#define kArg_kickValue       10
+#define kArg_snareValue      11
+#define kArg_hihatValue      12
+#define kArg_numNodes        13
+#define kArg_magnitudeFactor 14
+#define kArg_ampFactor       15
+#define kArg_colorFactor     16
 
 #define kMode_audioReact 0
 #define kMode_explode 1
@@ -45,38 +49,46 @@ msa::OpenCLBuffer clMemNodes;
 
 GLuint vbo[2];
 
+// Global to project:
 ofColor backgroundColor;
-float4 color;
-float4 parameters;
-float2 mousePos;
-float2 dimensions;
-float currentTime;
-float dTime;
-
-unsigned int currentMode;
-unsigned int numNodes;
 unsigned int numParticles;
 unsigned int pointSize;
-
 bool  bDoVSync;
 float radius;
 
-float explosionThreshold;
+// Kernel Parameters:
+float2 initPos;
+float4 color;
+float2 dimensions;
+unsigned int currentMode;
+unsigned int numNodes;
+float magnitudeFactor;
+float ampFactor;
+float colorFactor;
 
+// Times:
+float currentTime;
+float dTime;
+
+// Explosion Parameters:
+float explosionThreshold;
+float explosionTime;
+
+// Beat Tracking Parameters:
 float kickValue, snareValue, hihatValue;
 float prevKickValue;
 float currMagnitude;
 float prevMagnitude;
 
-float2 initPos;
-
+// FBOs
 #ifdef FBOS
 	ofFbo fboBlur;
 	ofFbo fboPrev;
 	ofFbo fboParticles;
 #endif
 
-string textureName = "images/bhole.png";
+// Texture:
+string textureName = "images/spark.png";
 
 // Shaders:
 ofShader shader;
@@ -105,8 +117,12 @@ void clParticles::setupGUI() {
 	gui = new ofxUICanvas();
 	gui->init(0, ofGetHeight()/8, ofGetWidth()/6, ofGetHeight());
 #ifdef GUI
-	gui->addSlider("Blur Amount", 0, 50, blurAmount);
-	gui->addSlider("Fade Speed", 0, 1, fadeSpeed);
+	gui->addSlider("Explosion Threshold", 0.0f, 2.0f, explosionThreshold);
+	gui->addSlider("Explosion Time", 0.0f, 2.0f, explosionTime);
+	gui->addSlider("Number of Nodes", 0, 32, numNodes);
+	gui->addSlider("Magnitude Factor", 0.0f, 2.0f, magnitudeFactor);
+	gui->addSlider("Amplification Factor", 0.0f, 100.0f, ampFactor);
+	gui->addSlider("Color Factor", 0.0f, 1.0f, colorFactor);
 #endif
 	ofAddListener(gui->newGUIEvent, this, &clParticles::guiEvent);
 	gui->autoSizeToFitWidgets();
@@ -121,7 +137,8 @@ void clParticles::setupParameters() {
 	color.z = 0.33f;
 	color.w = 1.0f;
 	
-	explosionThreshold = 0.5f;
+	explosionThreshold = 0.9f;
+	explosionTime = 0.5f;
 	
 	numParticles = MAX_NUM_PARTICLES;
 	
@@ -132,8 +149,12 @@ void clParticles::setupParameters() {
 	snareValue = 0.0f;
 	hihatValue = 0.0f;
 	numNodes = MAX_NUM_NODES;
+	magnitudeFactor = 0.9f;
+	ampFactor = 1.25;
+	colorFactor = 0.96f;
+	
 	// Time variables:
-	currentTime = 0;
+	currentTime = 0.0f;
 	dTime = 0.01f;
 	
 	// Dimensions:
@@ -205,6 +226,9 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_snareValue, snareValue);
 	clKernel->setArg(kArg_hihatValue, hihatValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
+	clKernel->setArg(kArg_magnitudeFactor, magnitudeFactor);
+	clKernel->setArg(kArg_ampFactor, ampFactor);
+	clKernel->setArg(kArg_colorFactor, colorFactor);
 }
 
 //------------------------------------------------------------------------------
@@ -281,7 +305,7 @@ void clParticles::updateBeatTracker() {
 	}
 	if(currentMode == kMode_explode) {
 		std::cout << "kmodeExplode" << std::endl;
-		if(currentTime > 0.5) {
+		if(currentTime > explosionTime) {
 			currentMode = kMode_audioReact;
 			std::cout << "back to audio react" << std::endl;
 		}
@@ -305,6 +329,9 @@ void clParticles::updateOpenCL() {
 	clKernel->setArg(kArg_snareValue, snareValue);
 	clKernel->setArg(kArg_hihatValue, hihatValue);
 	clKernel->setArg(kArg_numNodes, numNodes);
+	clKernel->setArg(kArg_magnitudeFactor, magnitudeFactor);
+	clKernel->setArg(kArg_ampFactor, ampFactor);
+	clKernel->setArg(kArg_colorFactor, colorFactor);
 	
     // Update the OpenCL kernel:
     clEnqueueAcquireGLObjects(opencl.getQueue(),
@@ -499,13 +526,29 @@ void clParticles::exit() {
 //------------------------------------------------------------------------------
 void clParticles::guiEvent(ofxUIEventArgs &e) {
 #ifdef GUI
-	if(e.getName() == "Blur Amount") {
+	if(e.getName() == "Explosion Threshold") {
 		ofxUISlider *slider = e.getSlider();
-		blurAmount = slider->getScaledValue();
+		explosionThreshold = slider->getScaledValue();
 	}
-	if(e.getName() == "Fade Speed") {
+	if(e.getName() == "Explosion Time") {
 		ofxUISlider *slider = e.getSlider();
-		fadeSpeed = slider->getScaledValue();
+		explosionTime = slider->getScaledValue();
+	}
+	if(e.getName() == "Number of Nodes") {
+		ofxUISlider *slider = e.getSlider();
+		numNodes = slider->getScaledValue();
+	}
+	if(e.getName() == "Magnitude Factor") {
+		ofxUISlider *slider = e.getSlider();
+		magnitudeFactor = slider->getScaledValue();
+	}
+	if(e.getName() == "Amplification Factor") {
+		ofxUISlider *slider = e.getSlider();
+		ampFactor = slider->getScaledValue();
+	}
+	if(e.getName() == "Color Factor") {
+		ofxUISlider *slider = e.getSlider();
+		colorFactor = slider->getScaledValue();
 	}
 #endif
 }
