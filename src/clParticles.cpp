@@ -69,7 +69,7 @@ float2 initPos;
 	ofFbo fboParticles;
 #endif
 
-string textureName = "images/glitter.png";
+string textureName = "images/bhole.png";
 
 
 // Shaders:
@@ -80,7 +80,7 @@ ofImage particuleTex;
 ofxUICanvas *gui;
 
 // FFT:
-ofxMSAfft fft;
+ofxMSAfft theFft;
 
 //------------------------------------------------------------------------------
 //																		   SETUP
@@ -139,7 +139,7 @@ void clParticles::setupParameters() {
 }
 //------------------------------------------------------------------------------
 void clParticles::setupFFT() {
-	fft.setup(44100, 2048, 0, 1, 2, 512);
+	theFft.setup(44100, 2048, 0, 1, 2, 512);
 }
 //------------------------------------------------------------------------------
 void clParticles::setupOpenCL() {
@@ -190,7 +190,7 @@ void clParticles::setupOpenCL() {
 	clKernel->setArg(kArg_mousePos, mousePos);
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
-	clKernel->setArg(kArg_fftPower, fft.avgPower);
+	clKernel->setArg(kArg_fftPower, theFft.avgPower);
 	clKernel->setArg(kArg_numNodes, numNodes);
 }
 //------------------------------------------------------------------------------
@@ -250,13 +250,13 @@ void clParticles::setupParticles() {
 //																	   FUNCTIONS
 //------------------------------------------------------------------------------
 void clParticles::updateNodes() {
-	int size = (fft.bufferSize>>1) - 1;
+	int size = (theFft.bufferSize>>1) - 1;
 	float freqMax = 0;
 	int indexMax = 0;
 	for (int i = 0; i < size; i++){
-		if(fft.freq[i] > freqMax) {
+		if(theFft.freq[i] > freqMax) {
 			indexMax = i;
-			freqMax = fft.freq[i];
+			freqMax = theFft.freq[i];
 		}
 	}
 //	std::cout << fft.freq[indexMax]
@@ -276,7 +276,7 @@ void clParticles::updateOpenCL() {
 	clKernel->setArg(kArg_dimensions, dimensions);
 	clKernel->setArg(kArg_color, color);
 	clKernel->setArg(kArg_prevAvgPower, prevAvgPower);
-	clKernel->setArg(kArg_fftPower, fft.avgPower);
+	clKernel->setArg(kArg_fftPower, theFft.avgPower);
 	clKernel->setArg(kArg_numNodes, numNodes);
 	
     // Update the OpenCL kernel:
@@ -366,12 +366,14 @@ void clParticles::drawFFT() {
 void clParticles::drawNodes() {
 	ofPushMatrix();
 	{
-		glColor4f(color.x * fft.avgPower,
-				  color.y * fft.avgPower,
-				  color.z * fft.avgPower, 0.5f);
+		ofSetRectMode(OF_RECTMODE_CENTER);
+		glColor4f(color.x * theFft.avgPower,
+				  color.y * theFft.avgPower,
+				  color.z * theFft.avgPower, 0.5f);
 		for(int i = 0; i < MAX_NUM_NODES; i++) {
 			particuleTex.draw(nodes[i].pos.x, nodes[i].pos.y, radius, radius);
 		}
+		ofSetRectMode(OF_RECTMODE_CORNER);
 	}
 	ofPopMatrix();
 }
@@ -421,9 +423,9 @@ void clParticles::setup() {
 
 void clParticles::update() {
 	// FFT update:
-	fft.update();
-	std::cout << fft.avgPower << std::endl;
-	if( abs(fft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
+	theFft.update();
+	std::cout << theFft.avgPower << std::endl;
+	if( abs(theFft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
 		currentMode = kModeExplode;
 		currentTime = 0;
 	}
@@ -448,7 +450,7 @@ void clParticles::update() {
 	
     // Update Global Variables:
     currentTime += dTime;
-	prevAvgPower = fft.avgPower;
+	prevAvgPower = theFft.avgPower;
 }
 
 //------------------------------------------------------------------------------

@@ -5,6 +5,7 @@
 #include "ofxUI.h"
 #include "MSAOpenCL.h"
 #include "ofxMSAfft.h"
+#include "ofxBeat.h"
 #include "particle.h"
 //--------------------
 

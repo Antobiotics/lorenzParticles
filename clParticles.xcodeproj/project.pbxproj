@@ -40,6 +40,7 @@
 		9BE4AE0AA2B8C436BDFE9D4D /* ofxUIDragableLabelButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FFD5D3C9D38E29DB72B32254 /* ofxUIDragableLabelButton.cpp */; };
 		9F5C6DD965B4F3A6DB5B88F8 /* ofxUI2DGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02FF3B8D243CFB85AE0909EB /* ofxUI2DGraph.cpp */; };
 		A854A26C873CB7CB18844F73 /* MSACoreGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CBA1268BC95928A23E347221 /* MSACoreGL.cpp */; };
+		A8A9BB7718BE01C2005B9D5C /* ofxBeat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A8A9BB7518BE01C2005B9D5C /* ofxBeat.cpp */; };
 		A8DB9FB218BA20AF00BD507A /* FFT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A8DB9FAC18BA20AF00BD507A /* FFT.cpp */; };
 		A8DB9FB318BA20AF00BD507A /* fftOctaveAnalyzer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A8DB9FAE18BA20AF00BD507A /* fftOctaveAnalyzer.cpp */; };
 		A8DB9FB418BA20AF00BD507A /* ofxMSAfft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A8DB9FB018BA20AF00BD507A /* ofxMSAfft.cpp */; };
@@ -218,6 +219,9 @@
 		A0E48FD05BDA9491DCA86AAA /* MSAFluidDrawerBase.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = MSAFluidDrawerBase.cpp; path = ../../../addons/ofxMSAFluid/src/MSAFluidDrawerBase.cpp; sourceTree = SOURCE_ROOT; };
 		A64B8AA7481267CD4A76C16B /* ofxUITabBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxUITabBar.cpp; path = ../../../addons/ofxUI/src/ofxUITabBar.cpp; sourceTree = SOURCE_ROOT; };
 		A8896AC3BECAAA504E3828F4 /* ofxUIEventArgs.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxUIEventArgs.cpp; path = ../../../addons/ofxUI/src/ofxUIEventArgs.cpp; sourceTree = SOURCE_ROOT; };
+		A8A9BB7418BDFF7B005B9D5C /* bhole.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = bhole.png; path = images/bhole.png; sourceTree = "<group>"; };
+		A8A9BB7518BE01C2005B9D5C /* ofxBeat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxBeat.cpp; sourceTree = "<group>"; };
+		A8A9BB7618BE01C2005B9D5C /* ofxBeat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxBeat.h; sourceTree = "<group>"; };
 		A8DB9FA418B9E5CC00BD507A /* glitter.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = glitter.png; path = images/glitter.png; sourceTree = "<group>"; };
 		A8DB9FA518B9E5CC00BD507A /* spark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = spark.png; path = images/spark.png; sourceTree = "<group>"; };
 		A8DB9FA618B9F4EE00BD507A /* star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = star.png; path = images/star.png; sourceTree = "<group>"; };
@@ -439,6 +443,7 @@
 		A8DB9FA318B9E58500BD507A /* images */ = {
 			isa = PBXGroup;
 			children = (
+				A8A9BB7418BDFF7B005B9D5C /* bhole.png */,
 				A8DB9FA918BA17A700BD507A /* dot.png */,
 				A8DB9FA618B9F4EE00BD507A /* star.png */,
 				A8DB9FA418B9E5CC00BD507A /* glitter.png */,
@@ -693,6 +698,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				A8A9BB7518BE01C2005B9D5C /* ofxBeat.cpp */,
+				A8A9BB7618BE01C2005B9D5C /* ofxBeat.h */,
 				EAFE46A218B235D9004F14BE /* clParticles.cpp */,
 				EAFE46A318B235D9004F14BE /* clParticles.h */,
 				EAFE46A418B235D9004F14BE /* main.cpp */,
@@ -902,6 +909,7 @@
 				A8DB9FB418BA20AF00BD507A /* ofxMSAfft.cpp in Sources */,
 				C30B3A2A37F8F32EE7318718 /* ofxUILabelToggle.cpp in Sources */,
 				9A83D1B3FB64456BC907667F /* ofxUIMinimalSlider.cpp in Sources */,
+				A8A9BB7718BE01C2005B9D5C /* ofxBeat.cpp in Sources */,
 				F440B307990F8F5CE40B9111 /* ofxUIMovingGraph.cpp in Sources */,
 				222C3AB10FA3158602718602 /* ofxUIMultiImageButton.cpp in Sources */,
 				F9C20834354ACC8337320B8C /* ofxUIMultiImageToggle.cpp in Sources */,
@@ -1072,7 +1080,7 @@
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)Debug";
 				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = NO;
-				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxFft/libs/** ../../../addons/ofxFft/src/**";
+				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxBeat/src/**";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -1101,7 +1109,7 @@
 				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = NO;
-				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxFft/libs/** ../../../addons/ofxFft/src/**";
+				USER_HEADER_SEARCH_PATHS = "../../../addons/ofxBeat/src/**";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
