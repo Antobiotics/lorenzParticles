@@ -62,7 +62,8 @@ float radius;
 
 float kickValue, snareValue, hihatValue;
 float prevKickValue;
-
+float currentMagnitude;
+float previousMagnitude;
 float2 initPos;
 
 #ifdef FBOS
@@ -112,17 +113,18 @@ void clParticles::setupParameters() {
 	backgroundColor = *new ofColor(255, 255, 255);
 	color.x = 1.0f;
 	color.y = 0.74f;
-	color.z = 0.33;
+	color.z = 0.33f;
 	color.w = 1.0f;
 	
 	numParticles = MAX_NUM_PARTICLES;
 	
 	// Kernel Parameters:
-	prevKickValue = 0.1;
+	prevKickValue = 0.1f;
+	previousMagnitude = 0.0f;
 	numNodes = MAX_NUM_NODES;
 	// Time variables:
 	currentTime = 0;
-	dTime = 0.01;
+	dTime = 0.01f;
 	
 	// Dimensions:
 	pointSize = 1;
@@ -341,9 +343,9 @@ void clParticles::drawInfos() {
 
 //------------------------------------------------------------------------------
 void clParticles::drawBeaTracker() {
-	cout << kickValue  << ","
-		 << snareValue << ","
-	     << hihatValue << endl;
+//	cout << kickValue  << ","
+//		 << snareValue << ","
+//	     << hihatValue << endl;
 }
 
 //------------------------------------------------------------------------------
@@ -409,18 +411,19 @@ void clParticles::update() {
 	kickValue = beatTracker.kick();
 	snareValue = beatTracker.snare();
 	hihatValue = beatTracker.hihat();
-//	std::cout << theFft.avgPower << std::endl;
-//	if( abs(theFft.avgPower - prevAvgPower) > 0.98f && currentMode == kModeAudioReact) {
-//		currentMode = kModeExplode;
-//		currentTime = 0;
-//	}
-//	if(currentMode == kModeExplode) {
-//		std::cout << "kmodeExplode" << std::endl;
-//		if(currentTime > 0.5) {
-//			currentMode = kModeAudioReact;
-//			std::cout << "back to audio react" << std::endl;
-//		}
-//	}
+	currentMagnitude = beatTracker.getMagnitude();
+	std::cout << currentMagnitude - previousMagnitude << std::endl;
+	if( abs(currentMagnitude - previousMagnitude) > 0.98f && currentMode == kModeAudioReact) {
+		currentMode = kModeExplode;
+		currentTime = 0;
+	}
+	if(currentMode == kModeExplode) {
+		std::cout << "kmodeExplode" << std::endl;
+		if(currentTime > 0.5) {
+			currentMode = kModeAudioReact;
+			std::cout << "back to audio react" << std::endl;
+		}
+	}
 	// Nodes update:
 	updateNodes();
 	
@@ -436,6 +439,7 @@ void clParticles::update() {
     // Update Global Variables:
     currentTime += dTime;
 	prevKickValue = kickValue;
+	previousMagnitude = currentMagnitude;
 }
 
 //------------------------------------------------------------------------------
